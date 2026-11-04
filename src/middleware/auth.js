@@ -29,6 +29,28 @@ async function authenticate(req, res, next) {
   next();
 }
 
+// Optional authentication: if valid token is provided, attaches req.user; otherwise proceeds as anonymous.
+async function optionalAuth(req, res, next) {
+  const header = req.get('authorization') || '';
+  const [scheme, token] = header.split(' ');
+  if (scheme !== 'Bearer' || !token) return next();
+
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET);
+    const { rows } = await query(
+      'SELECT user_id, email, full_name, role, account_status FROM users WHERE user_id = $1',
+      [payload.sub]
+    );
+    const user = rows[0];
+    if (user && user.account_status === 'ACTIVE') {
+      req.user = { id: user.user_id, email: user.email, fullName: user.full_name, role: user.role };
+    }
+  } catch {
+    // Ignore invalid token for optional auth
+  }
+  next();
+}
+
 // Use after authenticate: authorize('ADMIN') allows only admins, authorize('ADMIN', 'ALUMNI') allows both.
 const authorize =
   (...roles) =>
@@ -38,4 +60,4 @@ const authorize =
     next();
   };
 
-module.exports = { authenticate, authorize };
+module.exports = { authenticate, optionalAuth, authorize };
