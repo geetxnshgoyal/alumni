@@ -6,6 +6,8 @@ checkpoint 1, before implementation of the remaining items. Weights total **100%
 
 Status key: ☐ not started · ◐ in progress · ☑ demonstrated (fill in date + evidence)
 
+Lead items L1–L9 can be shown live with `npm run demo` (see README → Checkpoint demo).
+
 ## Lead: Geetansh Goyal (33.4%) - core identity, directory, shared infrastructure, deployment
 
 | # | Item | Weight | Acceptance test (what the evaluator sees) | Status |
