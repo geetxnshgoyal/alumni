@@ -59,5 +59,6 @@ in controllers unless you want to handle a specific error.
 ## 5. Before opening a pull request
 
 - [ ] `npm test` passes, including tests for 400 / 401 / 403 / 404 / 409 cases
+- [ ] The **Tests** check on the pull request is green (GitHub Actions runs it automatically)
 - [ ] Only your module's files and the one-line registrations changed
 - [ ] Checklist item number in the PR title, e.g. "B3: job posts API"
