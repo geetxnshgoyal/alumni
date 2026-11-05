@@ -62,6 +62,7 @@ the hosted app: `npm run demo -- https://<your-service>.onrender.com`. Needs `cu
 |---|---|
 | `Invalid environment configuration` | `.env` is missing or a value is wrong; the message names the field |
 | `password authentication failed for user "postgres"` | Wrong password in `.env` (it is the one you chose when installing Postgres) |
+| Password contains `@ : / # ?` or `%` | Write those characters URL-encoded in `.env`, e.g. `@` as `%40` |
 | `role "postgres" does not exist` | Homebrew/Postgres.app install: use your Mac username in the URLs, no password |
 | `connect ECONNREFUSED 127.0.0.1:5432` | Postgres is not running. pgAdmin does not start it: start the PostgreSQL service (Windows: Services app; Homebrew: `brew services start postgresql@16`) |
 | `Warning: ... changed after it was applied` | Someone edited a migration you already ran. Run `npm run db:reset` (local databases only: deletes and rebuilds them with demo data) |
@@ -75,6 +76,9 @@ npm test
 ```
 
 Tests run against `TEST_DATABASE_URL`. That database is wiped between tests, so never point it at real data.
+
+GitHub Actions runs the same tests against a fresh PostgreSQL on every pull request and every push to `main`
+([.github/workflows/test.yml](.github/workflows/test.yml)). A pull request should only be merged when the **Tests** check is green.
 
 ## Environment variables
 
