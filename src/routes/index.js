@@ -26,7 +26,7 @@ router.use('/connections', require('../modules/connections/connections.routes'))
 
 // Member C - donations, success stories, surveys, feedback
 router.use('/campaigns', require('../modules/donations/campaigns.routes'));
-// router.use('/donations', require('../modules/donations/donations.routes'));
+router.use('/donations', require('../modules/donations/donations.routes'));
 // router.use('/stories', require('../modules/stories/stories.routes'));
 // router.use('/surveys', require('../modules/surveys/surveys.routes'));
 // router.use('/feedback', require('../modules/feedback/feedback.routes'));

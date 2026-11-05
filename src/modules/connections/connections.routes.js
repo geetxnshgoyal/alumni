@@ -11,3 +11,4 @@ router.use(authenticate);
 router.post('/', validate({ body: schemas.create }), controller.create);
 
 module.exports = router;
+
