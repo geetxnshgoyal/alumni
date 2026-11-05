@@ -331,4 +331,79 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(res.body.donationStatus).toBe('FAILED');
     });
   });
+
+  describe('GET /api/donations/:id/receipt (Formal Tax Receipt Generation #C3)', () => {
+    it('generates and returns formal receipt payload for settled donation', async () => {
+      // 1. Create and settle donation
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 10000 });
+      const { donation, gatewayOrder } = orderRes.body.data;
+      const paymentId = gateway.generateTestPaymentId();
+
+      await api().post('/api/donations/verify').set(auth(alum1.token)).send({
+        donationId: donation.donationId,
+        gatewayOrderId: gatewayOrder.orderId,
+        gatewayPaymentId: paymentId,
+        signature: gateway.generateSignature({ orderId: gatewayOrder.orderId, paymentId }),
+      });
+
+      // 2. Fetch JSON receipt
+      const receiptRes = await api()
+        .get(`/api/donations/${donation.donationId}/receipt`)
+        .set(auth(alum1.token));
+
+      expect(receiptRes.status).toBe(200);
+      expect(receiptRes.body.data.receiptNo).toMatch(/^REC-2026-\d{6}$/);
+      expect(receiptRes.body.data.amount).toBe(10000);
+      expect(receiptRes.body.data.amountInWords).toContain('Ten Thousand Rupees Only');
+      expect(receiptRes.body.data.taxExemptCode).toBe('80G-ALUMNI-2026-EXEMPT');
+
+      // 3. Fetch HTML printable receipt
+      const htmlRes = await api()
+        .get(`/api/donations/${donation.donationId}/receipt?format=html`)
+        .set(auth(alum1.token));
+
+      expect(htmlRes.status).toBe(200);
+      expect(htmlRes.text).toContain('Official Donation Acknowledgment');
+      expect(htmlRes.text).toContain(receiptRes.body.data.receiptNo);
+    });
+
+    it('denies receipt with 400 if donation is not successful', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 2000 });
+      const { donation } = orderRes.body.data;
+
+      const res = await api()
+        .get(`/api/donations/${donation.donationId}/receipt`)
+        .set(auth(alum1.token));
+
+      expect(res.status).toBe(400);
+    });
+
+    it('denies other alumni with 403 when trying to access someone else receipt', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 3000 });
+      const { donation, gatewayOrder } = orderRes.body.data;
+      const paymentId = gateway.generateTestPaymentId();
+
+      await api().post('/api/donations/verify').set(auth(alum1.token)).send({
+        donationId: donation.donationId,
+        gatewayOrderId: gatewayOrder.orderId,
+        gatewayPaymentId: paymentId,
+        signature: gateway.generateSignature({ orderId: gatewayOrder.orderId, paymentId }),
+      });
+
+      const res = await api()
+        .get(`/api/donations/${donation.donationId}/receipt`)
+        .set(auth(alum2.token));
+
+      expect(res.status).toBe(403);
+    });
+  });
 });

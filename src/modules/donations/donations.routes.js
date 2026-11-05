@@ -27,4 +27,7 @@ router.get('/campaign/:id', optionalAuth, validate({ params: schemas.idParam, qu
 // 6. Get single donation details (donor or admin)
 router.get('/:id', authenticate, validate({ params: schemas.idParam }), controller.getById);
 
+// 7. Get formal donation receipt (printable HTML or JSON payload)
+router.get('/:id/receipt', authenticate, validate({ params: schemas.idParam }), controller.getReceipt);
+
 module.exports = router;
