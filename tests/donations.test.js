@@ -253,4 +253,82 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(historyRes.body.data[0].amount).toBe(1200);
     });
   });
+
+  describe('POST /api/donations/webhook (Gateway Webhook Events)', () => {
+    it('idempotently handles payment.captured webhook with valid HMAC signature', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 4500 });
+      const { gatewayOrder } = orderRes.body.data;
+
+      const paymentId = gateway.generateTestPaymentId();
+      const webhookPayload = {
+        event: 'payment.captured',
+        payload: {
+          orderId: gatewayOrder.orderId,
+          paymentId,
+        },
+      };
+
+      const webhookSig = gateway.generateWebhookSignature(webhookPayload);
+
+      // First webhook delivery
+      const res1 = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', webhookSig)
+        .send(webhookPayload);
+
+      expect(res1.status).toBe(200);
+      expect(res1.body.donationStatus).toBe('SUCCESS');
+      expect(res1.body.alreadyProcessed).toBe(false);
+
+      // Duplicate delivery (idempotency check)
+      const res2 = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', webhookSig)
+        .send(webhookPayload);
+
+      expect(res2.status).toBe(200);
+      expect(res2.body.alreadyProcessed).toBe(true);
+    });
+
+    it('rejects webhook with invalid signature with 400', async () => {
+      const res = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', 'forged_signature_00000')
+        .send({
+          event: 'payment.captured',
+          payload: { orderId: 'order_test_fake' },
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('handles payment.failed webhook event', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 2000 });
+      const { gatewayOrder } = orderRes.body.data;
+
+      const webhookPayload = {
+        event: 'payment.failed',
+        payload: {
+          orderId: gatewayOrder.orderId,
+          reason: 'Card expired at issuer bank',
+        },
+      };
+
+      const webhookSig = gateway.generateWebhookSignature(webhookPayload);
+
+      const res = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', webhookSig)
+        .send(webhookPayload);
+
+      expect(res.status).toBe(200);
+      expect(res.body.donationStatus).toBe('FAILED');
+    });
+  });
 });

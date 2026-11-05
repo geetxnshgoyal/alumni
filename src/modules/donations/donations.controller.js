@@ -148,6 +148,35 @@ async function listCampaignDonations(req, res, next) {
   }
 }
 
+async function handleWebhook(req, res, next) {
+  try {
+    const signature = req.get('x-razorpay-signature') || req.get('x-gateway-signature') || req.body?.signature;
+    const rawPayload = req.body;
+
+    if (signature) {
+      const isValid = gateway.verifyWebhookSignature(rawPayload, signature);
+      if (!isValid) {
+        throw ApiError.badRequest('Invalid webhook signature verification failed');
+      }
+    }
+
+    const event = req.body.event || 'payment.captured';
+    const payload = req.body.payload || req.body;
+
+    const result = await donations.handleWebhookEvent({ event, payload });
+
+    res.json({
+      status: 'ok',
+      event,
+      alreadyProcessed: result.alreadyProcessed ?? false,
+      donationId: result.donation.donationId,
+      donationStatus: result.donation.donationStatus,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   createOrder,
   verifyPayment,
@@ -155,4 +184,5 @@ module.exports = {
   getById,
   listMyDonations,
   listCampaignDonations,
+  handleWebhook,
 };
