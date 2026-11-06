@@ -1,4 +1,5 @@
 const ApiError = require('../../utils/ApiError');
+const { paginationMeta } = require('../../utils/pagination');
 const connections = require('./connections.model');
 const users = require('../users/users.model');
 const notifications = require('../notifications/notifications.model');
@@ -39,7 +40,74 @@ async function create(req, res) {
   res.status(201).json({ data: connection });
 }
 
+// GET /api/connections
+async function list(req, res) {
+  const params = req.valid.query;
+  const { rows, total } = await connections.listForUser(req.user.id, params);
+  const pagination = paginationMeta(params, total);
+  res.json({
+    data: rows,
+    pagination,
+    meta: pagination,
+  });
+}
+
+// GET /api/connections/:id
+async function getById(req, res) {
+  const connection = await connections.findById(req.valid.params.id);
+  if (!connection) {
+    throw ApiError.notFound('Connection request not found');
+  }
+  if (connection.requesterId !== req.user.id && connection.receiverId !== req.user.id && req.user.role !== 'ADMIN') {
+    throw ApiError.forbidden("Cannot view another user's connection");
+  }
+  res.json({ data: connection });
+}
+
+// PATCH /api/connections/:id/accept
+async function accept(req, res) {
+  const { id } = req.valid.params;
+  const connection = await connections.findById(id);
+  if (!connection) {
+    throw ApiError.notFound('Connection request not found');
+  }
+
+  if (connection.receiverId !== req.user.id) {
+    throw ApiError.forbidden('Only the receiver can accept a connection request');
+  }
+
+  const updated = await connections.updateStatus(id, 'ACCEPTED');
+
+  await notifications.notify(connection.requesterId, {
+    type: 'CONNECTION_ACCEPTED',
+    title: `${req.user.fullName} accepted your connection request`,
+    body: null,
+    linkUrl: '#/network',
+  });
+
+  res.json({ data: updated });
+}
+
+// PATCH /api/connections/:id/reject
+async function reject(req, res) {
+  const { id } = req.valid.params;
+  const connection = await connections.findById(id);
+  if (!connection) {
+    throw ApiError.notFound('Connection request not found');
+  }
+
+  if (connection.receiverId !== req.user.id) {
+    throw ApiError.forbidden('Only the receiver can reject a connection request');
+  }
+
+  const updated = await connections.updateStatus(id, 'REJECTED');
+  res.json({ data: updated });
+}
+
 module.exports = {
   create,
+  list,
+  getById,
+  accept,
+  reject,
 };
-
