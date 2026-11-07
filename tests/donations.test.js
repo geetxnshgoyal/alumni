@@ -253,4 +253,157 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(historyRes.body.data[0].amount).toBe(1200);
     });
   });
+
+  describe('POST /api/donations/webhook (Gateway Webhook Events)', () => {
+    it('idempotently handles payment.captured webhook with valid HMAC signature', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 4500 });
+      const { gatewayOrder } = orderRes.body.data;
+
+      const paymentId = gateway.generateTestPaymentId();
+      const webhookPayload = {
+        event: 'payment.captured',
+        payload: {
+          orderId: gatewayOrder.orderId,
+          paymentId,
+        },
+      };
+
+      const webhookSig = gateway.generateWebhookSignature(webhookPayload);
+
+      // First webhook delivery
+      const res1 = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', webhookSig)
+        .send(webhookPayload);
+
+      expect(res1.status).toBe(200);
+      expect(res1.body.donationStatus).toBe('SUCCESS');
+      expect(res1.body.alreadyProcessed).toBe(false);
+
+      // Duplicate delivery (idempotency check)
+      const res2 = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', webhookSig)
+        .send(webhookPayload);
+
+      expect(res2.status).toBe(200);
+      expect(res2.body.alreadyProcessed).toBe(true);
+    });
+
+    it('rejects webhook with invalid signature with 400', async () => {
+      const res = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', 'forged_signature_00000')
+        .send({
+          event: 'payment.captured',
+          payload: { orderId: 'order_test_fake' },
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('handles payment.failed webhook event', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 2000 });
+      const { gatewayOrder } = orderRes.body.data;
+
+      const webhookPayload = {
+        event: 'payment.failed',
+        payload: {
+          orderId: gatewayOrder.orderId,
+          reason: 'Card expired at issuer bank',
+        },
+      };
+
+      const webhookSig = gateway.generateWebhookSignature(webhookPayload);
+
+      const res = await api()
+        .post('/api/donations/webhook')
+        .set('x-razorpay-signature', webhookSig)
+        .send(webhookPayload);
+
+      expect(res.status).toBe(200);
+      expect(res.body.donationStatus).toBe('FAILED');
+    });
+  });
+
+  describe('GET /api/donations/:id/receipt (Formal Tax Receipt Generation #C3)', () => {
+    it('generates and returns formal receipt payload for settled donation', async () => {
+      // 1. Create and settle donation
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 10000 });
+      const { donation, gatewayOrder } = orderRes.body.data;
+      const paymentId = gateway.generateTestPaymentId();
+
+      await api().post('/api/donations/verify').set(auth(alum1.token)).send({
+        donationId: donation.donationId,
+        gatewayOrderId: gatewayOrder.orderId,
+        gatewayPaymentId: paymentId,
+        signature: gateway.generateSignature({ orderId: gatewayOrder.orderId, paymentId }),
+      });
+
+      // 2. Fetch JSON receipt
+      const receiptRes = await api()
+        .get(`/api/donations/${donation.donationId}/receipt`)
+        .set(auth(alum1.token));
+
+      expect(receiptRes.status).toBe(200);
+      expect(receiptRes.body.data.receiptNo).toMatch(/^REC-2026-\d{6}$/);
+      expect(receiptRes.body.data.amount).toBe(10000);
+      expect(receiptRes.body.data.amountInWords).toContain('Ten Thousand Rupees Only');
+      expect(receiptRes.body.data.taxExemptCode).toBe('80G-ALUMNI-2026-EXEMPT');
+
+      // 3. Fetch HTML printable receipt
+      const htmlRes = await api()
+        .get(`/api/donations/${donation.donationId}/receipt?format=html`)
+        .set(auth(alum1.token));
+
+      expect(htmlRes.status).toBe(200);
+      expect(htmlRes.text).toContain('Official Donation Acknowledgment');
+      expect(htmlRes.text).toContain(receiptRes.body.data.receiptNo);
+    });
+
+    it('denies receipt with 400 if donation is not successful', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 2000 });
+      const { donation } = orderRes.body.data;
+
+      const res = await api()
+        .get(`/api/donations/${donation.donationId}/receipt`)
+        .set(auth(alum1.token));
+
+      expect(res.status).toBe(400);
+    });
+
+    it('denies other alumni with 403 when trying to access someone else receipt', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 3000 });
+      const { donation, gatewayOrder } = orderRes.body.data;
+      const paymentId = gateway.generateTestPaymentId();
+
+      await api().post('/api/donations/verify').set(auth(alum1.token)).send({
+        donationId: donation.donationId,
+        gatewayOrderId: gatewayOrder.orderId,
+        gatewayPaymentId: paymentId,
+        signature: gateway.generateSignature({ orderId: gatewayOrder.orderId, paymentId }),
+      });
+
+      const res = await api()
+        .get(`/api/donations/${donation.donationId}/receipt`)
+        .set(auth(alum2.token));
+
+      expect(res.status).toBe(403);
+    });
+  });
 });

@@ -333,6 +333,56 @@ async function listByCampaign({ campaignId, page = 1, limit = 20, viewerUserId =
   };
 }
 
+/**
+ * Idempotently handles asynchronous webhook events from payment gateway provider.
+ */
+async function handleWebhookEvent({ event, payload }) {
+  const gatewayOrderId = payload?.orderId || payload?.order_id || payload?.entity?.order_id;
+  if (!gatewayOrderId) {
+    throw ApiError.badRequest('Missing order ID in webhook payload');
+  }
+
+  const existing = await findByOrderId(gatewayOrderId);
+  if (!existing) {
+    throw ApiError.notFound(`No donation found for gateway order ${gatewayOrderId}`);
+  }
+
+  if (event === 'payment.captured' || event === 'order.paid') {
+    const paymentId = payload?.paymentId || payload?.payment_id || payload?.entity?.id || `pay_${Date.now()}`;
+    const signature = payload?.signature || 'webhook_verified';
+
+    if (existing.donationStatus === 'SUCCESS') {
+      return { donation: existing, alreadyProcessed: true };
+    }
+
+    const settled = await recordPaymentSuccess({
+      donationId: existing.donationId,
+      gatewayOrderId,
+      gatewayPaymentId: paymentId,
+      signature,
+    });
+    return { donation: settled, alreadyProcessed: false };
+  }
+
+  if (event === 'payment.failed') {
+    if (existing.donationStatus === 'FAILED') {
+      return { donation: existing, alreadyProcessed: true };
+    }
+    if (existing.donationStatus === 'SUCCESS') {
+      return { donation: existing, alreadyProcessed: true, note: 'Already settled' };
+    }
+
+    const failed = await recordPaymentFailure({
+      donationId: existing.donationId,
+      gatewayOrderId,
+      reason: payload?.reason || payload?.error_description || 'Webhook payment failed notification',
+    });
+    return { donation: failed, alreadyProcessed: false };
+  }
+
+  return { donation: existing, ignoredEvent: event };
+}
+
 module.exports = {
   findById,
   findByOrderId,
@@ -341,4 +391,5 @@ module.exports = {
   recordPaymentFailure,
   listByDonor,
   listByCampaign,
+  handleWebhookEvent,
 };

@@ -94,6 +94,37 @@ class PaymentGatewayService {
   generateTestPaymentId() {
     return `pay_test_${crypto.randomBytes(8).toString('hex')}`;
   }
+
+  /**
+   * Generates HMAC-SHA256 signature for webhook payloads.
+   * @param {string|Object} payload - raw body string or JSON object
+   * @param {string} secret - webhook secret (defaults to keySecret)
+   * @returns {string}
+   */
+  generateWebhookSignature(payload, secret = this.keySecret) {
+    const raw = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    return crypto.createHmac('sha256', secret).update(raw).digest('hex');
+  }
+
+  /**
+   * Verifies incoming webhook HMAC signature using timing-safe comparison.
+   * @param {string|Object} payload
+   * @param {string} signature
+   * @param {string} secret
+   * @returns {boolean}
+   */
+  verifyWebhookSignature(payload, signature, secret = this.keySecret) {
+    if (!payload || !signature) return false;
+    const expected = this.generateWebhookSignature(payload, secret);
+    try {
+      const expBuf = Buffer.from(expected, 'utf8');
+      const actBuf = Buffer.from(signature, 'utf8');
+      if (expBuf.length !== actBuf.length) return false;
+      return crypto.timingSafeEqual(expBuf, actBuf);
+    } catch {
+      return false;
+    }
+  }
 }
 
 module.exports = new PaymentGatewayService();
