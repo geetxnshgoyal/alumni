@@ -57,6 +57,10 @@ async function list(req, res) {
     throw ApiError.forbidden('Only users with an accepted connection can view messages');
   }
 
+  if (isParticipant) {
+    await messages.markAsRead(connectionId, req.user.id);
+  }
+
   const { rows, total } = await messages.listByConnection(connectionId, req.valid.query);
   const pagination = paginationMeta(req.valid.query, total);
 
