@@ -9,7 +9,7 @@ async function log({ actorId = null, action, entityName, entityId = null, outcom
   );
 }
 
-async function list({ page = 1, limit = 20, action, outcome } = {}) {
+async function list({ page = 1, limit = 20, action, outcome, from, to } = {}) {
   const conditions = [];
   const values = [];
 
@@ -20,6 +20,14 @@ async function list({ page = 1, limit = 20, action, outcome } = {}) {
   if (outcome) {
     values.push(outcome);
     conditions.push(`al.outcome = $${values.length}`);
+  }
+  if (from) {
+    values.push(from);
+    conditions.push(`al.created_at >= $${values.length}::date`);
+  }
+  if (to) {
+    values.push(to);
+    conditions.push(`al.created_at < $${values.length}::date + 1`); // whole "to" day included
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
