@@ -69,7 +69,7 @@ async function overview(tab) {
 
 async function usersTab(tab) {
   try {
-    const res = await api.get('/admin/users', { limit: 50 });
+    const res = await api.getPage('/admin/users', { limit: 50 });
     const users = res.data || [];
 
     tab.innerHTML = `
@@ -130,7 +130,7 @@ async function usersTab(tab) {
 
 async function verification(tab) {
   try {
-    const res = await api.get('/admin/users', { role: 'ALUMNI' });
+    const res = await api.getPage('/admin/users', { role: 'ALUMNI' });
     const pending = (res.data || []).filter(u => u.verificationStatus === 'PENDING');
 
     if (!pending.length) {
@@ -265,14 +265,29 @@ async function departmentsTab(tab) {
   }
 }
 
-async function auditTab(tab) {
+async function auditTab(tab, filters = {}) {
   try {
-    const res = await api.get('/admin/audit-logs', { limit: 50 });
+    const res = await api.getPage('/admin/audit-logs', { ...filters, limit: 50 });
     const logs = res.data || [];
 
     tab.innerHTML = `
       <div class="card">
         <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Security & Activity Audit Trail</h2>
+        <form id="audit-filters" class="filters" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:16px;">
+          <div class="field"><label for="audit-action">Action</label>
+            <input id="audit-action" name="action" placeholder="e.g. LOGIN" value="${esc(filters.action || '')}"></div>
+          <div class="field"><label for="audit-outcome">Outcome</label>
+            <select id="audit-outcome" name="outcome">
+              <option value="">Any</option>
+              ${['SUCCESS', 'FAILURE'].map((o) => `<option ${filters.outcome === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select></div>
+          <div class="field"><label for="audit-from">From</label>
+            <input id="audit-from" name="from" type="date" value="${esc(filters.from || '')}"></div>
+          <div class="field"><label for="audit-to">To</label>
+            <input id="audit-to" name="to" type="date" value="${esc(filters.to || '')}"></div>
+          <div class="actions"><button type="submit">Apply</button><button type="button" class="btn btn-secondary" id="audit-clear">Clear</button></div>
+        </form>
+        <p class="small muted" style="margin-bottom:8px;">Showing ${logs.length} of ${res.pagination?.total ?? logs.length} entries</p>
         <div class="table-wrap">
           <table>
             <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Outcome</th><th>IP Address</th></tr></thead>
@@ -292,6 +307,11 @@ async function auditTab(tab) {
         </div>
       </div>
     `;
+    tab.querySelector('#audit-filters').addEventListener('submit', (e) => {
+      e.preventDefault();
+      auditTab(tab, Object.fromEntries(new FormData(e.target)));
+    });
+    tab.querySelector('#audit-clear').addEventListener('click', () => auditTab(tab));
   } catch (err) {
     tab.innerHTML = `<div class="card" style="color:var(--danger);">Failed to load audit logs: ${esc(err.message)}</div>`;
   }

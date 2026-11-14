@@ -9,11 +9,15 @@ const accountStatus = z.object({
   accountStatus: z.enum(['ACTIVE', 'SUSPENDED']),
 });
 
-const auditQuery = z.object({
-  action: optionalText(60).transform((v) => v?.toUpperCase()),
-  outcome: z.enum(['SUCCESS', 'FAILURE']).optional(),
-  ...pagination,
-});
+const auditQuery = z
+  .object({
+    action: optionalText(60).transform((v) => v?.toUpperCase()),
+    outcome: z.enum(['SUCCESS', 'FAILURE']).optional(),
+    from: z.iso.date().optional(), // YYYY-MM-DD, inclusive
+    to: z.iso.date().optional(), // YYYY-MM-DD, inclusive
+    ...pagination,
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, { message: 'from must be on or before to', path: ['from'] });
 
 const usersQuery = z.object({
   role: z.enum(['ADMIN', 'ALUMNI', 'STUDENT']).optional(),
