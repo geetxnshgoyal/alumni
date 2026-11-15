@@ -6,7 +6,7 @@ export async function renderNotifications(container) {
 
   async function loadData() {
     try {
-      const res = await api.get('/notifications');
+      const res = await api.getPage('/notifications');
       renderList(res.data || [], res.unread || 0);
     } catch (err) {
       container.innerHTML = `

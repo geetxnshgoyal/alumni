@@ -7,7 +7,7 @@ export async function renderDirectory(container) {
   async function loadData() {
     container.querySelector('#dir-results').innerHTML = loading('Loading alumni directory...');
     try {
-      const res = await api.get('/alumni', query);
+      const res = await api.getPage('/alumni', query);
       renderResults(res.data || [], res.pagination);
     } catch (err) {
       container.querySelector('#dir-results').innerHTML = `

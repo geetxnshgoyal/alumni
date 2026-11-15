@@ -100,6 +100,29 @@ describe('Admin API', () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toBeDefined();
     });
+
+    test('audit log filters by action, outcome and date range', async () => {
+      await api().post('/api/auth/login').send({ email: alumni.email, password: 'Wrong@12345' });
+      const today = new Date().toISOString().slice(0, 10);
+
+      const failures = await api().get('/api/admin/audit-logs?action=login&outcome=FAILURE').set(auth(admin.token));
+      expect(failures.status).toBe(200);
+      expect(failures.body.data.length).toBeGreaterThan(0);
+      expect(failures.body.data.every((l) => l.action === 'LOGIN' && l.outcome === 'FAILURE')).toBe(true);
+
+      const todayOnly = await api().get(`/api/admin/audit-logs?from=${today}&to=${today}`).set(auth(admin.token));
+      expect(todayOnly.body.pagination.total).toBeGreaterThan(0);
+
+      const past = await api().get('/api/admin/audit-logs?from=2000-01-01&to=2000-01-31').set(auth(admin.token));
+      expect(past.body.data).toHaveLength(0);
+    });
+
+    test('audit log rejects invalid dates and reversed ranges (400)', async () => {
+      const bad = await api().get('/api/admin/audit-logs?from=14-11-2026').set(auth(admin.token));
+      expect(bad.status).toBe(400);
+      const reversed = await api().get('/api/admin/audit-logs?from=2026-02-01&to=2026-01-01').set(auth(admin.token));
+      expect(reversed.status).toBe(400);
+    });
   });
 
   describe('departments', () => {

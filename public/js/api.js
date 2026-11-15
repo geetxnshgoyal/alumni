@@ -33,7 +33,7 @@ export const auth = {
 };
 
 export async function apiRequest(path, options = {}) {
-  const { method = 'GET', body, query, headers = {} } = options;
+  const { method = 'GET', body, query, headers = {}, envelope = false } = options;
 
   let url = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : '/' + path}`;
   if (query) {
@@ -88,11 +88,13 @@ export async function apiRequest(path, options = {}) {
     throw err;
   }
 
+  if (envelope) return responseData; // list endpoints: keep pagination / unread next to data
   return responseData?.data !== undefined ? responseData.data : responseData;
 }
 
 export const api = {
   get: (path, query) => apiRequest(path, { method: 'GET', query }),
+  getPage: (path, query) => apiRequest(path, { method: 'GET', query, envelope: true }),
   post: (path, body) => apiRequest(path, { method: 'POST', body }),
   put: (path, body) => apiRequest(path, { method: 'PUT', body }),
   delete: (path, body) => apiRequest(path, { method: 'DELETE', body })
