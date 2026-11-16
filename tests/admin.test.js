@@ -103,7 +103,7 @@ describe('Admin API', () => {
 
     test('audit log filters by action, outcome and date range', async () => {
       await api().post('/api/auth/login').send({ email: alumni.email, password: 'Wrong@12345' });
-      const today = new Date().toISOString().slice(0, 10);
+      const { rows: [{ today }] } = await pool.query('SELECT CURRENT_DATE::text AS today');
 
       const failures = await api().get('/api/admin/audit-logs?action=login&outcome=FAILURE').set(auth(admin.token));
       expect(failures.status).toBe(200);
