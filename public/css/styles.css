@@ -65,33 +65,19 @@ p { margin: 0 0 1rem; }
 .container { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; outline: none; }
 
 /* ---------- top bar ---------- */
-.topbar {
-  position: sticky; top: 0; z-index: 20;
-  display: flex; align-items: center; gap: 16px;
-  padding: 10px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+.navbar { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); }
+.nav-container {
+  max-width: 1120px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap;
 }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); text-decoration: none; }
-.nav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-wrap: wrap; }
-.nav a, .nav button.linklike {
-  padding: 8px 12px; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 0.95rem;
-}
-.nav a:hover, .nav button.linklike:hover { background: var(--surface-2); }
-.nav a.active { background: var(--surface-2); font-weight: 600; }
-.nav .badge { margin-left: 4px; }
-.menu-toggle { display: none; margin-left: auto; background: none; border: 0; padding: 8px; cursor: pointer; }
-.menu-toggle span { display: block; width: 22px; height: 2px; margin: 4px 0; background: var(--text); border-radius: 2px; }
-
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); text-decoration: none; }
+.nav-links { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.nav-links a { padding: 8px 12px; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 0.95rem; }
+.nav-links a:hover, .nav-links a.active { background: var(--surface-2); }
+.nav-links a.active { font-weight: 600; }
 @media (max-width: 760px) {
-  .menu-toggle { display: block; }
-  .nav {
-    display: none; position: absolute; top: 100%; left: 0; right: 0;
-    flex-direction: column; align-items: stretch; gap: 0;
-    padding: 8px 16px 16px; background: var(--surface); border-bottom: 1px solid var(--border);
-  }
-  .nav.open { display: flex; }
-  .nav a, .nav button.linklike { padding: 12px; }
+  .nav-links { order: 3; width: 100%; margin-left: 0; }
+  .nav-user { margin-left: auto; }
 }
 
 /* ---------- buttons & forms ---------- */
