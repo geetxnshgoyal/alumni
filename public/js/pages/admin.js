@@ -1,26 +1,32 @@
 import { api } from '../api.js';
-import { $, avatar, badge, esc, formatDate, loading, toast } from '../ui.js';
+import { $, avatar, badge, esc, formatDateTime, loading, toast } from '../ui.js';
 
 const TABS = [
-  ['overview', 'Overview'],
-  ['users', 'User Management'],
+  ['overview', 'Overview & Stats'],
   ['verification', 'Verification Queue'],
+  ['users', 'User Directory'],
   ['departments', 'Departments'],
-  ['audit', 'Audit Log'],
+  ['audit', 'Security Audit Trail'],
 ];
 
 let currentTab = 'overview';
 
 export async function renderAdmin(el) {
   el.innerHTML = `
-    <div style="margin-bottom: 24px;">
-      <h1 style="font-size: 1.85rem; font-weight: 700; margin-bottom: 8px;">Admin Console</h1>
-      <p class="muted">Platform metrics, user approvals, department directory, and security audit log.</p>
+    <!-- Admin Header -->
+    <div style="margin-bottom: var(--space-5);">
+      <span class="caption" style="color: var(--primary);">System Administration</span>
+      <h1 style="font-size: 28px; margin-top: 4px; margin-bottom: 6px;">GradLink Administration Console</h1>
+      <p class="text-muted" style="max-width: 680px; margin: 0;">
+        Review pending alumni identity verifications, manage account statuses, oversee academic departments, and inspect security audit logs.
+      </p>
     </div>
 
-    <div class="segmented" role="tablist">
+    <!-- Segmented Tab Navigation -->
+    <div class="segmented-control" role="tablist" style="margin-bottom: var(--space-5); overflow-x: auto;">
       ${TABS.map(([id, label]) => `<button type="button" data-tab="${id}" class="${id === currentTab ? 'active' : ''}">${label}</button>`).join('')}
     </div>
+    
     <section id="tab-content"></section>
   `;
 
@@ -47,23 +53,70 @@ async function overview(tab) {
     const v = data.alumniVerification || {};
 
     tab.innerHTML = `
-      <div class="grid grid-3">
-        <div class="card"><div class="muted small">Verified Alumni</div><div class="stat" style="color:var(--primary);">${v.VERIFIED ?? 0}</div></div>
-        <div class="card"><div class="muted small">Active Students</div><div class="stat">${total('STUDENT')}</div></div>
-        <div class="card"><div class="muted small">Pending Verification</div><div class="stat" style="color:var(--danger);">${v.PENDING ?? 0}</div></div>
+      <div class="grid grid-3" style="margin-bottom: var(--space-5);">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Verified Alumni</span>
+            <div class="stat-icon" style="color: var(--success); background: var(--success-bg);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: var(--success);">${v.VERIFIED ?? 0}</div>
+          <div class="stat-sub">Active in alumni directory</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Active Students</span>
+            <div class="stat-icon" style="color: var(--primary); background: var(--primary-light);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+            </div>
+          </div>
+          <div class="stat-value">${total('STUDENT')}</div>
+          <div class="stat-sub">Registered student members</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Verification Queue</span>
+            <div class="stat-icon" style="color: var(--danger); background: var(--danger-bg);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: var(--danger);">${v.PENDING ?? 0}</div>
+          <div class="stat-sub">Pending admin approval</div>
+        </div>
       </div>
-      <div class="card" style="margin-top:16px;">
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">Verified Alumni by Department</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Verified Alumni by Department</h3>
+          <span class="small muted">Distribution overview</span>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Department</th><th>Code</th><th>Verified Alumni</th></tr></thead>
-            <tbody>${(data.byDepartment || []).map((d) => `<tr><td>${esc(d.deptName)}</td><td><code>${esc(d.deptCode)}</code></td><td>${d.alumni}</td></tr>`).join('')}</tbody>
+            <thead>
+              <tr>
+                <th>Department Name</th>
+                <th>Dept Code</th>
+                <th>Verified Alumni</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(data.byDepartment || []).map((d) => `
+                <tr>
+                  <td><strong>${esc(d.deptName)}</strong></td>
+                  <td><code style="background:var(--surface-2); padding:2px 6px; border-radius:4px; font-weight:700;">${esc(d.deptCode)}</code></td>
+                  <td style="font-weight: 700; color: var(--primary);">${d.alumni}</td>
+                </tr>
+              `).join('')}
+            </tbody>
           </table>
         </div>
       </div>
     `;
   } catch (err) {
-    tab.innerHTML = `<div class="card" style="color:var(--danger);">Failed to load stats: ${esc(err.message)}</div>`;
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load stats: ${esc(err.message)}</div>`;
   }
 }
 
@@ -74,12 +127,24 @@ async function usersTab(tab) {
 
     tab.innerHTML = `
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="font-size: 1.2rem; font-weight: 600;">Registered Accounts (${res.pagination?.total || users.length})</h2>
+        <div class="card-header">
+          <div>
+            <h3>Platform Accounts</h3>
+            <p class="small muted" style="margin: 0;">Total registered users: ${res.pagination?.total || users.length}</p>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>User</th><th>Role</th><th>Dept</th><th>Status</th><th>Verification</th><th>Actions</th></tr></thead>
+            <thead>
+              <tr>
+                <th>User Account</th>
+                <th>Role</th>
+                <th>Dept</th>
+                <th>Account Status</th>
+                <th>Verification</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody>
               ${users.map((u) => `
                 <tr>
@@ -116,7 +181,7 @@ async function usersTab(tab) {
         const status = b.dataset.status;
         try {
           await api.patch(`/admin/users/${id}/status`, { accountStatus: status });
-          toast(`Account marked as ${status}`);
+          toast(`Account marked as ${status}`, 'success');
           usersTab(tab);
         } catch (err) {
           toast(err.message || 'Operation failed', 'error');
@@ -124,7 +189,7 @@ async function usersTab(tab) {
       });
     });
   } catch (err) {
-    tab.innerHTML = `<div class="card" style="color:var(--danger);">Failed to load users: ${esc(err.message)}</div>`;
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load users: ${esc(err.message)}</div>`;
   }
 }
 
@@ -135,8 +200,10 @@ async function verification(tab) {
 
     if (!pending.length) {
       tab.innerHTML = `
-        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted);">
-          🎉 Verification queue is empty! All alumni profiles are verified.
+        <div class="card" style="text-align: center; padding: 48px var(--space-4);">
+          <div style="font-size: 32px; margin-bottom: 12px;">✅</div>
+          <h3 style="margin-bottom: 6px;">Verification queue is empty</h3>
+          <p class="small muted" style="margin: 0;">All alumni profiles are currently verified.</p>
         </div>
       `;
       return;
@@ -144,7 +211,13 @@ async function verification(tab) {
 
     tab.innerHTML = `
       <div class="card">
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Pending Alumni Profiles (${pending.length})</h2>
+        <div class="card-header">
+          <div>
+            <h3>Pending Alumni Verification Queue</h3>
+            <p class="small muted" style="margin: 0;">${pending.length} alumnus accounts awaiting credential verification.</p>
+          </div>
+          <span class="badge badge-warning">${pending.length} Pending</span>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Alumni Name</th><th>Email</th><th>Dept</th><th>Actions</th></tr></thead>
@@ -176,7 +249,7 @@ async function verification(tab) {
         const status = b.dataset.action;
         try {
           await api.patch(`/admin/alumni/${id}/verification`, { status, note: `Processed by administrator` });
-          toast(`Alumni profile marked as ${status}`);
+          toast(`Alumni profile marked as ${status}`, 'success');
           verification(tab);
         } catch (err) {
           toast(err.message || 'Verification failed', 'error');
@@ -184,7 +257,7 @@ async function verification(tab) {
       });
     });
   } catch (err) {
-    tab.innerHTML = `<div class="card" style="color:var(--danger);">Failed to load queue: ${esc(err.message)}</div>`;
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load queue: ${esc(err.message)}</div>`;
   }
 }
 
@@ -195,16 +268,19 @@ async function departmentsTab(tab) {
     tab.innerHTML = `
       <div class="grid grid-2">
         <div class="card">
-          <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Departments Directory</h2>
+          <div class="card-header">
+            <h3>Departments Directory</h3>
+            <span class="small muted">${(depts || []).length} Total</span>
+          </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Code</th><th>Name</th><th>Alumni</th><th></th></tr></thead>
+              <thead><tr><th>Code</th><th>Name</th><th>Alumni</th><th>Actions</th></tr></thead>
               <tbody>
                 ${(depts || []).map((d) => `
                   <tr>
-                    <td><code>${esc(d.deptCode)}</code></td>
-                    <td>${esc(d.deptName)}</td>
-                    <td>${d.alumniCount ?? 0}</td>
+                    <td><code style="background:var(--surface-2); padding:2px 6px; border-radius:4px; font-weight:700;">${esc(d.deptCode)}</code></td>
+                    <td><strong>${esc(d.deptName)}</strong></td>
+                    <td style="font-weight:700; color:var(--primary);">${d.alumniCount ?? 0}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-danger del-dept-btn" data-id="${d.deptId}">Delete</button>
                     </td>
@@ -216,17 +292,21 @@ async function departmentsTab(tab) {
         </div>
 
         <div class="card">
-          <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Add Department</h2>
-          <form id="add-dept-form" style="display: flex; flex-direction: column; gap: 12px;">
-            <div>
-              <label class="small muted" style="display: block; margin-bottom: 4px;">Department Code</label>
-              <input type="text" name="deptCode" placeholder="AI" required style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
+          <div class="card-header">
+            <h3>Add New Department</h3>
+          </div>
+          <form id="add-dept-form" style="display: flex; flex-direction: column;">
+            <div class="field">
+              <label class="label">Department Code</label>
+              <input type="text" name="deptCode" class="input" placeholder="e.g. AI" required />
             </div>
-            <div>
-              <label class="small muted" style="display: block; margin-bottom: 4px;">Department Name</label>
-              <input type="text" name="deptName" placeholder="Artificial Intelligence & Data Science" required style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
+            <div class="field">
+              <label class="label">Department Name</label>
+              <input type="text" name="deptName" class="input" placeholder="e.g. Artificial Intelligence & Data Science" required />
             </div>
-            <button type="submit" class="btn" style="padding: 8px 16px; align-self: flex-start;">Add Department</button>
+            <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2); align-self: flex-start;">
+              Create Department
+            </button>
           </form>
         </div>
       </div>
@@ -237,7 +317,7 @@ async function departmentsTab(tab) {
         if (!confirm('Are you sure you want to delete this department?')) return;
         try {
           await api.delete(`/departments/${b.dataset.id}`);
-          toast('Department deleted');
+          toast('Department deleted', 'success');
           departmentsTab(tab);
         } catch (err) {
           toast(err.message || 'Cannot delete department in use', 'error');
@@ -254,14 +334,14 @@ async function departmentsTab(tab) {
           deptCode: fd.get('deptCode').trim().toUpperCase(),
           deptName: fd.get('deptName').trim()
         });
-        toast('Department added!');
+        toast('Department added successfully!', 'success');
         departmentsTab(tab);
       } catch (err) {
         toast(err.message || 'Could not add department', 'error');
       }
     });
   } catch (err) {
-    tab.innerHTML = `<div class="card" style="color:var(--danger);">Failed to load departments: ${esc(err.message)}</div>`;
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load departments: ${esc(err.message)}</div>`;
   }
 }
 
@@ -272,34 +352,51 @@ async function auditTab(tab, filters = {}) {
 
     tab.innerHTML = `
       <div class="card">
-        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Security & Activity Audit Trail</h2>
-        <form id="audit-filters" class="filters" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:16px;">
-          <div class="field"><label for="audit-action">Action</label>
-            <input id="audit-action" name="action" placeholder="e.g. LOGIN" value="${esc(filters.action || '')}"></div>
-          <div class="field"><label for="audit-outcome">Outcome</label>
-            <select id="audit-outcome" name="outcome">
+        <div class="card-header">
+          <div>
+            <h3>Security & Activity Audit Trail</h3>
+            <p class="small muted" style="margin: 0;">Showing ${logs.length} of ${res.pagination?.total ?? logs.length} entries</p>
+          </div>
+        </div>
+
+        <form id="audit-filters" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: var(--space-4); padding: var(--space-3); background: var(--bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+          <div class="field" style="margin: 0; min-width: 140px; flex: 1;">
+            <label class="label">Action</label>
+            <input class="input" id="audit-action" name="action" placeholder="e.g. LOGIN" value="${esc(filters.action || '')}" />
+          </div>
+          <div class="field" style="margin: 0; min-width: 120px;">
+            <label class="label">Outcome</label>
+            <select class="select" id="audit-outcome" name="outcome">
               <option value="">Any</option>
-              ${['SUCCESS', 'FAILURE'].map((o) => `<option ${filters.outcome === o ? 'selected' : ''}>${o}</option>`).join('')}
-            </select></div>
-          <div class="field"><label for="audit-from">From</label>
-            <input id="audit-from" name="from" type="date" value="${esc(filters.from || '')}"></div>
-          <div class="field"><label for="audit-to">To</label>
-            <input id="audit-to" name="to" type="date" value="${esc(filters.to || '')}"></div>
-          <div class="actions"><button type="submit">Apply</button><button type="button" class="btn btn-secondary" id="audit-clear">Clear</button></div>
+              ${['SUCCESS', 'FAILURE'].map((o) => `<option value="${o}" ${filters.outcome === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field" style="margin: 0; min-width: 130px;">
+            <label class="label">From Date</label>
+            <input class="input" id="audit-from" name="from" type="date" value="${esc(filters.from || '')}" />
+          </div>
+          <div class="field" style="margin: 0; min-width: 130px;">
+            <label class="label">To Date</label>
+            <input class="input" id="audit-to" name="to" type="date" value="${esc(filters.to || '')}" />
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="audit-clear">Clear</button>
+          </div>
         </form>
-        <p class="small muted" style="margin-bottom:8px;">Showing ${logs.length} of ${res.pagination?.total ?? logs.length} entries</p>
+
         <div class="table-wrap">
           <table>
-            <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Outcome</th><th>IP Address</th></tr></thead>
+            <thead><tr><th>Timestamp</th><th>Actor</th><th>Action</th><th>Entity</th><th>Outcome</th><th>IP Address</th></tr></thead>
             <tbody>
-              ${logs.map((l) => `
+              ${!logs.length ? `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">No matching audit logs found.</td></tr>` : logs.map((l) => `
                 <tr>
-                  <td class="small muted">${formatDate(l.createdAt)}</td>
-                  <td>${esc(l.actorEmail || `User #${l.actorId || '—'}`)}</td>
+                  <td class="small muted">${formatDateTime(l.createdAt)}</td>
+                  <td><strong>${esc(l.actorEmail || `User #${l.actorId || '—'}`)}</strong></td>
                   <td><strong>${esc(l.action)}</strong>${l.errorCode ? `<div class="small muted">${esc(l.errorCode)}</div>` : ''}</td>
                   <td>${esc(l.entityName)}${l.entityId ? ` #${l.entityId}` : ''}</td>
                   <td>${badge(l.outcome)}</td>
-                  <td class="small muted">${esc(l.ipAddress || '—')}</td>
+                  <td class="small muted"><code>${esc(l.ipAddress || '127.0.0.1')}</code></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -307,12 +404,20 @@ async function auditTab(tab, filters = {}) {
         </div>
       </div>
     `;
-    tab.querySelector('#audit-filters').addEventListener('submit', (e) => {
+    tab.querySelector('#audit-filters')?.addEventListener('submit', (e) => {
       e.preventDefault();
-      auditTab(tab, Object.fromEntries(new FormData(e.target)));
+      const fd = new FormData(e.target);
+      const cleaned = {};
+      for (const [k, v] of fd.entries()) {
+        if (v && v.trim()) cleaned[k] = v.trim();
+      }
+      auditTab(tab, cleaned);
     });
-    tab.querySelector('#audit-clear').addEventListener('click', () => auditTab(tab));
+
+    tab.querySelector('#audit-clear')?.addEventListener('click', () => {
+      auditTab(tab, {});
+    });
   } catch (err) {
-    tab.innerHTML = `<div class="card" style="color:var(--danger);">Failed to load audit logs: ${esc(err.message)}</div>`;
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load audit logs: ${esc(err.message)}</div>`;
   }
 }

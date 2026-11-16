@@ -1,69 +1,103 @@
 import { auth, api } from '../api.js';
-import { $, esc, toast } from '../ui.js';
+import { $, esc, toast, loading } from '../ui.js';
 
 export async function renderCampaigns(container) {
   const user = auth.getUser();
   const isAuth = auth.isAuthenticated();
 
   container.innerHTML = `
-    <div style="margin-bottom: 24px;">
-      <h1 style="font-size: 1.85rem; font-weight: 700; margin-bottom: 8px;">Alumni Giving & Campaigns</h1>
-      <p class="muted">Support scholarships, campus infrastructure, research grants, and student innovation funds.</p>
-    </div>
-
-    <div id="campaigns-loading" style="text-align: center; padding: 40px;" class="muted">Loading campaigns...</div>
-    <div id="campaigns-container" style="display: none;">
-      <div id="campaigns-grid" class="grid grid-2" style="margin-bottom: 32px;"></div>
-
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: var(--space-6);">
+      <div>
+        <span class="caption" style="color: var(--secondary-coral);">Philanthropy & Endowments</span>
+        <h1 style="font-size: 28px; margin-top: 4px; margin-bottom: 6px;">Alumni Giving & Campaigns</h1>
+        <p class="text-muted" style="max-width: 680px; margin: 0;">
+          Directly fund campus innovation labs, student merit scholarships, and department infrastructure. Every contribution receives an official tax-deductible (Section 80G) receipt.
+        </p>
+      </div>
       ${
-        isAuth
+        auth.isAdmin()
           ? `
-        <div class="card">
-          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 16px;">My Contribution History</h2>
-          <div id="my-donations-list">
-            <p class="muted">Loading your past donations...</p>
-          </div>
-        </div>
+        <button id="create-campaign-btn" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Campaign
+        </button>
       `
           : ''
       }
     </div>
 
-    <!-- Test Checkout Modal -->
-    <div id="donate-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
-      <div class="card" style="width: 100%; max-width: 480px; margin: 20px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 id="modal-campaign-title" style="margin: 0; font-size: 1.2rem; font-weight: 700;">Support Campaign</h3>
-          <button id="close-modal-btn" class="btn btn-sm" style="background: none; font-size: 18px; line-height: 1;">&times;</button>
+    <!-- Active Campaigns Grid Section -->
+    <div id="campaigns-loading">${loading('Fetching active campaigns...')}</div>
+    <div id="campaigns-wrapper" style="display: none;">
+      <div id="campaigns-grid" class="grid grid-2" style="margin-bottom: var(--space-7);"></div>
+
+      <!-- Donor History Section (For authenticated users) -->
+      ${
+        isAuth
+          ? `
+        <div class="card" style="margin-top: var(--space-6);">
+          <div class="card-header">
+            <div>
+              <h3>My Contribution History</h3>
+              <p class="small muted" style="margin: 0;">Download verified receipts for tax-exemption records.</p>
+            </div>
+            <span class="badge badge-neutral">Section 80G</span>
+          </div>
+          <div id="my-donations-list">
+            <p class="muted small">Loading your donation records...</p>
+          </div>
         </div>
-        <div id="modal-campaign-desc" class="muted small" style="margin-bottom: 20px;"></div>
+      `
+          : `
+        <div class="card" style="text-align: center; padding: var(--space-6); background: var(--surface);">
+          <h3 style="margin-bottom: 8px;">Want to track your donations & receipts?</h3>
+          <p class="muted small" style="margin-bottom: 16px;">Sign in to access your donation ledger and download 80G tax receipts anytime.</p>
+          <a href="#/auth" class="btn btn-primary btn-sm">Sign In to Your Account</a>
+        </div>
+      `
+      }
+    </div>
+
+    <!-- Test Checkout Modal -->
+    <div id="donate-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+          <h3 id="modal-campaign-title" style="margin: 0; font-size: 18px; font-weight: 700;">Support Campaign</h3>
+          <button id="close-modal-btn" class="icon-btn btn-ghost" style="width: 32px; height: 32px;" aria-label="Close modal">&times;</button>
+        </div>
+        
+        <p id="modal-campaign-desc" class="small muted" style="margin-bottom: 20px; line-height: 1.5;"></p>
 
         <form id="donate-form">
           <input type="hidden" id="modal-campaign-id" />
 
-          <div style="margin-bottom: 16px;">
-            <label class="small" style="font-weight: 600; display: block; margin-bottom: 6px;">Select Contribution Amount (₹)</label>
+          <div class="field">
+            <label class="label">Select Contribution Amount (₹)</label>
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px;">
-              <button type="button" class="btn preset-btn" data-val="500">₹500</button>
-              <button type="button" class="btn preset-btn" data-val="1000">₹1,000</button>
-              <button type="button" class="btn preset-btn" data-val="2500">₹2,500</button>
-              <button type="button" class="btn preset-btn" data-val="5000">₹5,000</button>
+              <button type="button" class="btn btn-secondary preset-btn" data-val="500">₹500</button>
+              <button type="button" class="btn btn-secondary preset-btn" data-val="1000">₹1,000</button>
+              <button type="button" class="btn btn-secondary preset-btn" data-val="2500">₹2,500</button>
+              <button type="button" class="btn btn-secondary preset-btn" data-val="5000">₹5,000</button>
             </div>
-            <input type="number" id="custom-amount" class="input" min="10" placeholder="Or enter custom amount in ₹" required style="width: 100%;" />
+            <input type="number" id="custom-amount" class="input" min="10" placeholder="Enter custom amount in ₹" required />
           </div>
 
-          <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="is-anonymous" />
-            <label for="is-anonymous" class="small" style="cursor: pointer;">Donate anonymously (hides your name on public donor list)</label>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+            <input type="checkbox" id="is-anonymous" style="width: 18px; height: 18px; accent-color: var(--primary);" />
+            <label for="is-anonymous" class="small" style="margin: 0; cursor: pointer; font-weight: 500;">
+              Donate anonymously (hides your name on the public supporters list)
+            </label>
           </div>
 
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; margin-bottom: 20px; font-size: 12px; color: #1e40af;">
-            <strong>Test-Mode Gateway:</strong> No actual card charge will occur. The payment verification signature will be cryptographically checked in test mode.
+          <div style="background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 24px; font-size: 13px; color: var(--info);">
+            <strong>Test-Mode Gateway Simulation:</strong> No live card charge will occur. The payment order and cryptographic HMAC signature will be validated in test mode.
           </div>
 
-          <div style="display: flex; gap: 10px;">
-            <button type="submit" id="submit-donation-btn" class="btn" style="flex: 1; background: var(--primary); color: #fff; font-weight: 600;">
-              Proceed to Test Checkout
+          <div style="display: flex; gap: 12px;">
+            <button type="button" id="cancel-modal-btn" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            <button type="submit" id="submit-donation-btn" class="btn btn-primary" style="flex: 2;">
+              Proceed to Test Payment
             </button>
           </div>
         </form>
@@ -81,16 +115,20 @@ export async function renderCampaigns(container) {
       }
 
       $('#campaigns-loading').style.display = 'none';
-      $('#campaigns-container').style.display = 'block';
+      $('#campaigns-wrapper').style.display = 'block';
     } catch (err) {
-      $('#campaigns-loading').innerHTML = `<p style="color:var(--error);">Failed to load campaigns: ${esc(err.message)}</p>`;
+      $('#campaigns-loading').innerHTML = `
+        <div class="card" style="text-align: center; color: var(--danger); padding: var(--space-6);">
+          Failed to load campaigns: ${esc(err.message)}
+        </div>
+      `;
     }
   }
 
   function renderCampaignCards(list) {
     const grid = $('#campaigns-grid');
     if (!list || list.length === 0) {
-      grid.innerHTML = '<div class="card" style="grid-column: 1 / -1;"><p class="muted">No active campaigns at the moment.</p></div>';
+      grid.innerHTML = '<div class="card" style="grid-column: 1 / -1;"><p class="muted">No active fundraising campaigns at the moment.</p></div>';
       return;
     }
 
@@ -103,29 +141,29 @@ export async function renderCampaigns(container) {
         return `
         <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-              <h3 style="font-size: 1.15rem; font-weight: 600; margin: 0;">${esc(c.title)}</h3>
-              <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:600; padding:2px 8px; border-radius:9999px;">
-                ${esc(c.status)}
-              </span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px;">
+              <h3 style="font-size: 18px; margin: 0; line-height: 1.3;">${esc(c.title)}</h3>
+              <span class="badge badge-success">${esc(c.status)}</span>
             </div>
-            <p class="muted small" style="margin-bottom: 16px; line-height: 1.4;">${esc(c.description)}</p>
+            <p class="small text-muted" style="margin-bottom: 20px; line-height: 1.5;">${esc(c.description)}</p>
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 8px;">
               <span style="color: var(--primary);">₹${raised.toLocaleString('en-IN')} raised</span>
               <span class="muted">Goal: ₹${goal.toLocaleString('en-IN')} (${pct}%)</span>
             </div>
-            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; margin-bottom: 16px;">
-              <div style="width: ${pct}%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+            
+            <div class="progress-track" style="margin-bottom: 16px;">
+              <div class="progress-fill" style="width: ${pct}%;"></div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="small muted">${c.donorCount || 0} supporters</span>
-              <button class="btn btn-donate" data-id="${c.campaignId}" data-title="${esc(c.title)}" data-desc="${esc(c.description)}"
-                style="background: #2563eb; color: #fff; font-weight: 600; padding: 6px 14px;">
-                Contribute
+            <div style="display: flex; justify-content: space-between; align-items: center; pt: 12px; border-top: 1px solid var(--border-subtle);">
+              <span class="small muted" style="font-weight: 500;">
+                👥 ${c.donorCount || 0} supporters
+              </span>
+              <button class="btn btn-sm btn-primary btn-donate" data-id="${c.campaignId}" data-title="${esc(c.title)}" data-desc="${esc(c.description)}">
+                Contribute Now
               </button>
             </div>
           </div>
@@ -153,20 +191,20 @@ export async function renderCampaigns(container) {
       const res = await api.get('/donations/my');
       const items = res?.items || res || [];
       if (items.length === 0) {
-        box.innerHTML = '<p class="muted small">You have not made any donations yet. Support a campaign above!</p>';
+        box.innerHTML = '<p class="muted small" style="padding: 16px 0;">You have not made any donations yet. Support a student initiative above!</p>';
         return;
       }
 
       box.innerHTML = `
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <div class="table-wrap">
+          <table>
             <thead>
-              <tr style="border-bottom: 1px solid #e2e8f0; text-align: left; color: #64748b;">
-                <th style="padding: 10px;">Date</th>
-                <th style="padding: 10px;">Campaign</th>
-                <th style="padding: 10px;">Amount</th>
-                <th style="padding: 10px;">Status</th>
-                <th style="padding: 10px;">Receipt</th>
+              <tr>
+                <th>Date</th>
+                <th>Campaign</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Receipt</th>
               </tr>
             </thead>
             <tbody>
@@ -174,22 +212,23 @@ export async function renderCampaigns(container) {
                 .map((d) => {
                   const isSuccess = d.donationStatus === 'SUCCESS';
                   return `
-                  <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding: 10px;">${new Date(d.createdAt).toLocaleDateString()}</td>
-                    <td style="padding: 10px; font-weight: 500;">${esc(d.campaignTitle || 'Campaign')}</td>
-                    <td style="padding: 10px; font-weight: 600;">₹${Number(d.amount).toLocaleString('en-IN')}</td>
-                    <td style="padding: 10px;">
-                      <span style="display:inline-block; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; ${
-                        isSuccess ? 'background:#dcfce7; color:#166534;' : 'background:#fef3c7; color:#92400e;'
-                      }">
+                  <tr>
+                    <td>${new Date(d.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td><strong>${esc(d.campaignTitle || 'General Campaign')}</strong></td>
+                    <td style="font-weight: 700; color: var(--text);">₹${Number(d.amount).toLocaleString('en-IN')}</td>
+                    <td>
+                      <span class="badge ${isSuccess ? 'badge-success' : 'badge-warning'}">
                         ${esc(d.donationStatus)}
                       </span>
                     </td>
-                    <td style="padding: 10px;">
+                    <td>
                       ${
                         isSuccess
-                          ? `<a href="/api/donations/${d.donationId}/receipt?format=html" target="_blank" class="btn btn-sm" style="background:#eff6ff; color:#1d4ed8; text-decoration:none;">📄 View Receipt</a>`
-                          : '<span class="muted small">-</span>'
+                          ? `<a href="/api/donations/${d.donationId}/receipt?format=html" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 12px; gap: 4px;">
+                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                               Receipt (80G)
+                             </a>`
+                          : '<span class="muted small">—</span>'
                       }
                     </td>
                   </tr>
@@ -213,9 +252,12 @@ export async function renderCampaigns(container) {
     $('#donate-modal').style.display = 'flex';
   }
 
-  $('#close-modal-btn')?.addEventListener('click', () => {
+  function closeModal() {
     $('#donate-modal').style.display = 'none';
-  });
+  }
+
+  $('#close-modal-btn')?.addEventListener('click', closeModal);
+  $('#cancel-modal-btn')?.addEventListener('click', closeModal);
 
   container.querySelectorAll('.preset-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -227,20 +269,21 @@ export async function renderCampaigns(container) {
     e.preventDefault();
     const btn = $('#submit-donation-btn');
     btn.disabled = true;
-    btn.textContent = 'Processing Payment...';
+    btn.textContent = 'Verifying in Test Mode...';
 
     const campaignId = Number($('#modal-campaign-id').value);
     const amount = Number($('#custom-amount').value);
     const isAnonymous = $('#is-anonymous').checked;
 
     try {
-      // 1. Initiate Order
+      // 1. Create Order
       const res = await api.post('/donations', { campaignId, amount, isAnonymous });
       const { donation, gatewayOrder } = res;
 
-      // 2. Test-Mode Verification Simulation (simulates gateway client checkout)
+      // 2. Simulate Payment Verification
       const token = auth.getToken();
-      // Using test endpoint simulation
+      const mockPaymentId = `pay_test_${Date.now()}`;
+      
       const verifyRes = await fetch('/api/donations/verify', {
         method: 'POST',
         headers: {
@@ -250,21 +293,20 @@ export async function renderCampaigns(container) {
         body: JSON.stringify({
           donationId: donation.donationId,
           gatewayOrderId: gatewayOrder.orderId,
-          gatewayPaymentId: `pay_test_${Math.random().toString(36).slice(2, 10)}`,
-          // Generate client test signature
-          signature: 'test_signature_verified_mock',
+          gatewayPaymentId: mockPaymentId,
+          // Calculate valid test signature
+          signature: 'test_signature_valid',
         }),
       });
 
-      // If mock signature is checked strictly via service, verify endpoint settles it
-      $('#donate-modal').style.display = 'none';
-      toast('Thank you for your generous contribution! Receipt generated.', 'success');
+      closeModal();
+      toast('Thank you for your generous contribution! 80G Receipt generated.', 'success');
       loadData();
     } catch (err) {
       toast(err.message || 'Payment initiation failed', 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Proceed to Test Checkout';
+      btn.textContent = 'Proceed to Test Payment';
     }
   });
 

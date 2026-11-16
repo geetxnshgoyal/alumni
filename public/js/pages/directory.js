@@ -1,17 +1,83 @@
 import { api } from '../api.js';
-import { $, esc, avatar, toast, loading } from '../ui.js';
+import { $, esc, avatar, loading } from '../ui.js';
 
 export async function renderDirectory(container) {
-  let query = { page: 1, limit: 12, q: '' };
+  let query = { page: 1, limit: 12, q: '', deptId: '', graduationYear: '' };
+
+  // Fetch departments for filter dropdown
+  let departments = [];
+  try {
+    const dRes = await api.get('/departments');
+    departments = dRes?.data || dRes || [];
+  } catch {
+    departments = [];
+  }
+
+  container.innerHTML = `
+    <!-- Directory Header -->
+    <div style="margin-bottom: var(--space-5);">
+      <span class="caption" style="color: var(--primary);">Global Network</span>
+      <h1 style="font-size: 28px; margin-top: 4px; margin-bottom: 6px;">Searchable Alumni Directory</h1>
+      <p class="text-muted" style="max-width: 680px; margin: 0;">
+        Connect with verified graduates working across software, infrastructure, automotive, finance, and academia worldwide.
+      </p>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card" style="margin-bottom: var(--space-5); padding: var(--space-4);">
+      <form id="dir-filter-form" style="display: grid; grid-template-columns: 2fr 1.2fr 1fr auto; gap: 12px; align-items: end;">
+        <div class="field" style="margin: 0;">
+          <label class="label">Search by Name, Skill, or Company</label>
+          <input type="text" id="filter-search" class="input" placeholder="e.g. Aarav Patel, Google, Node.js..." value="${esc(query.q)}" />
+        </div>
+
+        <div class="field" style="margin: 0;">
+          <label class="label">Department</label>
+          <select id="filter-dept" class="select">
+            <option value="">All Departments</option>
+            ${departments.map(d => `<option value="${d.deptId}">${esc(d.deptCode)} — ${esc(d.deptName)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="field" style="margin: 0;">
+          <label class="label">Graduation Year</label>
+          <input type="number" id="filter-year" class="input" placeholder="e.g. 2018" min="1960" max="2026" />
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Filter
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results Area -->
+    <div id="dir-results">
+      ${loading('Loading alumni directory...')}
+    </div>
+  `;
+
+  // Parse URL query params if any (e.g. ?q=...)
+  const hash = window.location.hash;
+  if (hash.includes('?')) {
+    const params = new URLSearchParams(hash.split('?')[1]);
+    if (params.get('q')) {
+      query.q = params.get('q');
+      const input = container.querySelector('#filter-search');
+      if (input) input.value = query.q;
+    }
+  }
 
   async function loadData() {
     container.querySelector('#dir-results').innerHTML = loading('Loading alumni directory...');
     try {
       const res = await api.getPage('/alumni', query);
-      renderResults(res.data || [], res.pagination);
+      renderResults(res.data || res.items || res || [], res.pagination || res.meta);
     } catch (err) {
       container.querySelector('#dir-results').innerHTML = `
-        <div class="card" style="color: var(--danger); text-align: center; padding: 30px;">
+        <div class="card" style="color: var(--danger); text-align: center; padding: 40px;">
           Failed to load alumni: ${esc(err.message)}
         </div>
       `;
@@ -20,111 +86,122 @@ export async function renderDirectory(container) {
 
   function renderResults(alumniList, pagination) {
     const el = container.querySelector('#dir-results');
-    if (!alumniList.length) {
+    if (!alumniList || !alumniList.length) {
       el.innerHTML = `
-        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted);">
-          No alumni found matching your criteria.
+        <div class="card" style="text-align: center; padding: 48px var(--space-4);">
+          <div style="font-size: 32px; margin-bottom: 12px;">🔍</div>
+          <h3 style="margin-bottom: 6px;">No alumni found</h3>
+          <p class="muted small" style="max-width: 420px; margin: 0 auto 16px;">Try adjusting your search terms or clearing the department filters.</p>
+          <button id="reset-filter-btn" class="btn btn-sm btn-secondary">Clear Filters</button>
         </div>
       `;
+      el.querySelector('#reset-filter-btn')?.addEventListener('click', () => {
+        container.querySelector('#filter-search').value = '';
+        container.querySelector('#filter-dept').value = '';
+        container.querySelector('#filter-year').value = '';
+        query = { page: 1, limit: 12, q: '', deptId: '', graduationYear: '' };
+        loadData();
+      });
       return;
     }
 
     el.innerHTML = `
       <div class="grid grid-3">
-        ${alumniList.map((a) => `
-          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        ${alumniList
+          .map((a) => `
+          <div class="card card-interactive" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                ${avatar({ full_name: a.fullName }, 48)}
-                <div>
-                  <h3 style="font-size: 1.05rem; font-weight: 600;">${esc(a.fullName)}</h3>
-                  <div class="small muted">${esc(a.deptCode || '')} • Class of ${a.graduationYear || '—'}</div>
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  ${avatar({ fullName: a.fullName }, 44)}
+                  <div>
+                    <h3 style="font-size: 16px; margin: 0; line-height: 1.25;">${esc(a.fullName)}</h3>
+                    <span class="small muted" style="font-size: 13px;">${esc(a.deptCode || 'ENG')} • Class of ${a.graduationYear || '—'}</span>
+                  </div>
+                </div>
+                <span class="badge badge-success">Verified</span>
+              </div>
+
+              <div style="padding: 10px 12px; background: var(--bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); margin-bottom: 12px;">
+                <div style="font-weight: 700; font-size: 13px; color: var(--text);">
+                  ${esc(a.designation || 'Software Professional')}
+                </div>
+                <div class="small text-muted" style="font-size: 12px;">
+                  ${a.currentCompany ? `at ${esc(a.currentCompany)}` : 'Tech Industry'}
                 </div>
               </div>
-              <p style="font-weight: 500; font-size: 0.9rem; margin-bottom: 4px;">
-                ${esc(a.designation || 'Alumnus')} ${a.currentCompany ? `at ${esc(a.currentCompany)}` : ''}
-              </p>
+
               ${a.city ? `<div class="small muted" style="margin-bottom: 8px;">📍 ${esc(a.city)}${a.country ? `, ${esc(a.country)}` : ''}</div>` : ''}
-              ${a.skills && a.skills.length ? `
+
+              ${
+                a.skills && a.skills.length
+                  ? `
                 <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px;">
-                  ${a.skills.slice(0, 4).map(s => `<span class="badge" style="background:#e2e8f0; color:#334155; font-size:0.7rem;">${esc(s)}</span>`).join('')}
+                  ${a.skills
+                    .slice(0, 3)
+                    .map((s) => `<span class="chip" style="font-size: 11px; padding: 2px 8px;">${esc(s)}</span>`)
+                    .join('')}
+                  ${a.skills.length > 3 ? `<span class="small muted" style="align-self:center; font-size:11px;">+${a.skills.length - 3}</span>` : ''}
                 </div>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
 
-            <div style="margin-top: 16px; pt: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px;">
-              ${a.linkedinUrl ? `
-                <a href="${esc(a.linkedinUrl)}" target="_blank" rel="noopener" class="btn btn-sm" style="background: #f1f5f9; color: var(--text);">
-                  In
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-subtle); display: flex; gap: 8px; justify-content: space-between; align-items: center;">
+              <span class="small muted" style="font-size: 12px;">${esc(a.degree || 'B.E.')}</span>
+              ${
+                a.linkedinUrl
+                  ? `
+                <a href="${esc(a.linkedinUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary" style="height: 32px; font-size: 12px; gap: 4px;">
+                  LinkedIn
                 </a>
-              ` : ''}
+              `
+                  : `
+                <button class="btn btn-sm btn-ghost" style="height: 32px; font-size: 12px;">View Bio</button>
+              `
+              }
             </div>
           </div>
-        `).join('')}
+        `)
+          .join('')}
       </div>
 
-      ${pagination && pagination.totalPages > 1 ? `
-        <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 24px;">
-          <button id="prev-page" class="btn btn-sm" style="background:#e2e8f0; color:var(--text);" ${pagination.page <= 1 ? 'disabled' : ''}>Previous</button>
+      ${
+        pagination && pagination.totalPages > 1
+          ? `
+        <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: var(--space-6);">
+          <button id="prev-page" class="btn btn-sm btn-secondary" ${pagination.page <= 1 ? 'disabled' : ''}>← Previous</button>
           <span class="small muted">Page ${pagination.page} of ${pagination.totalPages}</span>
-          <button id="next-page" class="btn btn-sm" style="background:#e2e8f0; color:var(--text);" ${pagination.page >= pagination.totalPages ? 'disabled' : ''}>Next</button>
+          <button id="next-page" class="btn btn-sm btn-secondary" ${pagination.page >= pagination.totalPages ? 'disabled' : ''}>Next →</button>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     `;
 
-    const prevBtn = el.querySelector('#prev-page');
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
-        if (query.page > 1) {
-          query.page--;
-          loadData();
-        }
-      });
-    }
+    el.querySelector('#prev-page')?.addEventListener('click', () => {
+      if (query.page > 1) {
+        query.page--;
+        loadData();
+      }
+    });
 
-    const nextBtn = el.querySelector('#next-page');
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
-        if (query.page < pagination.totalPages) {
-          query.page++;
-          loadData();
-        }
-      });
-    }
+    el.querySelector('#next-page')?.addEventListener('click', () => {
+      if (pagination && query.page < pagination.totalPages) {
+        query.page++;
+        loadData();
+      }
+    });
   }
 
-  container.innerHTML = `
-    <div style="margin-bottom: 24px;">
-      <h1 style="font-size: 1.85rem; font-weight: 700; margin-bottom: 8px;">Alumni Directory</h1>
-      <p class="muted">Search and connect with verified graduates of Government Engineering College.</p>
-    </div>
-
-    <div class="card" style="margin-bottom: 20px;">
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <input type="text" id="dir-search" placeholder="Search by name, company, skill or bio..."
-               style="flex: 2; min-width: 200px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
-        <input type="number" id="dir-year" placeholder="Batch Year (e.g. 2018)"
-               style="flex: 1; min-width: 140px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
-        <button id="search-btn" class="btn" style="padding: 8px 18px;">Search</button>
-        <button id="reset-btn" class="btn" style="background:#f1f5f9; color:var(--text); padding: 8px 14px;">Reset</button>
-      </div>
-    </div>
-
-    <div id="dir-results"></div>
-  `;
-
-  container.querySelector('#search-btn').addEventListener('click', () => {
-    query.q = container.querySelector('#dir-search').value.trim();
-    const yr = container.querySelector('#dir-year').value.trim();
-    query.graduationYear = yr ? Number(yr) : undefined;
+  // Filter Form Submit
+  container.querySelector('#dir-filter-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    query.q = container.querySelector('#filter-search').value.trim();
+    query.deptId = container.querySelector('#filter-dept').value;
+    query.graduationYear = container.querySelector('#filter-year').value;
     query.page = 1;
-    loadData();
-  });
-
-  container.querySelector('#reset-btn').addEventListener('click', () => {
-    container.querySelector('#dir-search').value = '';
-    container.querySelector('#dir-year').value = '';
-    query = { page: 1, limit: 12, q: '' };
     loadData();
   });
 

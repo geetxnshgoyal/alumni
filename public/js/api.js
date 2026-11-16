@@ -97,5 +97,6 @@ export const api = {
   getPage: (path, query) => apiRequest(path, { method: 'GET', query, envelope: true }),
   post: (path, body) => apiRequest(path, { method: 'POST', body }),
   put: (path, body) => apiRequest(path, { method: 'PUT', body }),
+  patch: (path, body) => apiRequest(path, { method: 'PATCH', body }),
   delete: (path, body) => apiRequest(path, { method: 'DELETE', body })
 };

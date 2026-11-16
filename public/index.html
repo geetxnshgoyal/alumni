@@ -3,26 +3,78 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GEC Alumni Platform</title>
+  <title>GradLink — Multi-College Alumni Network</title>
+  <meta name="description" content="Connecting students, alumni, and administrators across institutions for mentorship, jobs, events, and fundraising.">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <header class="navbar">
-    <div class="nav-container">
-      <a href="#/" class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-        <span>GEC Alumni</span>
+  <!-- Global Top Header -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <button id="sidebar-toggle" class="icon-btn sidebar-toggle-btn" aria-label="Toggle navigation" title="Toggle navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <a href="#/" class="brand">
+        <div class="brand-symbol-wrap">
+          <svg class="brand-symbol" width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L3 11L16 18L29 11L16 4Z" fill="#2457A7"/>
+            <path d="M7 14.5V21C7 24.5 11 27.5 16 27.5C21 27.5 25 24.5 25 21V14.5" stroke="#E8795B" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="16" cy="12" r="2.5" fill="#F5C66A"/>
+          </svg>
+        </div>
+        <span class="brand-text">
+          <span class="brand-grad">Grad</span><span class="brand-link">Link</span>
+        </span>
+        <span class="brand-tag">Network</span>
       </a>
-      <nav class="nav-links" id="nav-links"></nav>
-      <div class="nav-user" id="nav-user"></div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="global-search" placeholder="Search directory, skills, campaigns..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="topbar-right" id="nav-user">
+      <!-- Injected by app.js: Notifications & User account or Sign in button -->
     </div>
   </header>
 
-  <main class="container" id="app"></main>
+  <!-- App Layout: Sidebar + Main Content -->
+  <div class="app-layout">
+    <aside class="sidebar" id="app-sidebar">
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Injected role-specific links -->
+      </nav>
+      <div class="sidebar-footer" id="sidebar-footer">
+        <div class="system-status-indicator">
+          <span class="status-dot online"></span>
+          <span class="small muted">PostgreSQL Connected</span>
+        </div>
+      </div>
+    </aside>
 
-  <div id="toast-container" class="toast-container"></div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <main class="main-content" id="app" tabindex="-1">
+      <!-- Dynamic Page Views Rendered Here -->
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation (Fixed) -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <!-- Touch-friendly primary destinations -->
+  </nav>
+
+  <!-- Floating Toast Notifications -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <script type="module" src="/js/app.js"></script>
 </body>
