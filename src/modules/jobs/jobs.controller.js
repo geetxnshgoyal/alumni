@@ -66,10 +66,46 @@ async function close(req, res) {
   res.json({ data: closed });
 }
 
+// POST /api/jobs/:id/apply (authenticated users)
+async function apply(req, res) {
+  const { id: jobId } = req.valid.params;
+  const job = await jobs.findById(jobId);
+  if (!job) {
+    throw ApiError.notFound('Job post not found');
+  }
+
+  if (job.status !== 'OPEN') {
+    throw ApiError.badRequest('Cannot apply to a closed or inactive job post');
+  }
+
+  const existing = await jobs.findApplication(jobId, req.user.id);
+  if (existing) {
+    throw ApiError.conflict('You have already applied to this job');
+  }
+
+  let application;
+  try {
+    application = await jobs.apply({
+      jobId,
+      applicantId: req.user.id,
+      resumeUrl: req.valid.body?.resumeUrl,
+      coverNote: req.valid.body?.coverNote,
+    });
+  } catch (err) {
+    if (err.code === '23505') {
+      throw ApiError.conflict('You have already applied to this job');
+    }
+    throw err;
+  }
+
+  res.status(201).json({ data: application });
+}
+
 module.exports = {
   create,
   list,
   getById,
   update,
   close,
+  apply,
 };
