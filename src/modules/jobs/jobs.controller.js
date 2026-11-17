@@ -2,6 +2,7 @@ const ApiError = require('../../utils/ApiError');
 const { paginationMeta } = require('../../utils/pagination');
 const jobs = require('./jobs.model');
 const audit = require('../audit/audit.model');
+const notifications = require('../notifications/notifications.model');
 
 // POST /api/jobs (alumni/admin)
 async function create(req, res) {
@@ -101,6 +102,72 @@ async function apply(req, res) {
   res.status(201).json({ data: application });
 }
 
+// PATCH /api/applications/:id/status (poster or admin only)
+async function updateApplicationStatus(req, res) {
+  const { id } = req.valid.params;
+  const application = await jobs.findApplicationById(id);
+  if (!application) {
+    throw ApiError.notFound('Application not found');
+  }
+
+  if (application.postedBy !== req.user.id && req.user.role !== 'ADMIN') {
+    throw ApiError.forbidden('Only the job poster or an admin can update application status');
+  }
+
+  const { status } = req.valid.body;
+  const updated = await jobs.updateApplicationStatus(id, status);
+
+  await notifications.notify(application.applicantId, {
+    type: 'JOB_APPLICATION',
+    title: `Application status updated: ${status}`,
+    body: `Your application for "${application.jobTitle}" at ${application.companyName} is now ${status}.`,
+    linkUrl: `#/jobs/${application.jobId}`,
+  });
+
+  res.json({ data: updated });
+}
+
+// GET /api/jobs/:id/applications (poster or admin only)
+async function listApplicationsForJob(req, res) {
+  const { id: jobId } = req.valid.params;
+  const job = await jobs.findById(jobId);
+  if (!job) {
+    throw ApiError.notFound('Job post not found');
+  }
+
+  if (job.postedBy !== req.user.id && req.user.role !== 'ADMIN') {
+    throw ApiError.forbidden('Only the job poster or an admin can view applications');
+  }
+
+  const query = req.valid?.query || { page: 1, limit: 20 };
+  const { rows, total } = await jobs.listApplicationsForJob(jobId, query);
+  const pagination = paginationMeta(query, total);
+  res.json({ data: rows, pagination, meta: pagination });
+}
+
+// GET /api/applications/me (authenticated user)
+async function listMyApplications(req, res) {
+  const query = req.valid?.query || { page: 1, limit: 20 };
+  const { rows, total } = await jobs.listApplicationsForUser(req.user.id, query);
+  const pagination = paginationMeta(query, total);
+  res.json({ data: rows, pagination, meta: pagination });
+}
+
+// GET /api/applications/:id (applicant, poster, or admin)
+async function getApplicationById(req, res) {
+  const { id } = req.valid.params;
+  const application = await jobs.findApplicationById(id);
+  if (!application) {
+    throw ApiError.notFound('Application not found');
+  }
+
+  if (application.applicantId !== req.user.id && application.postedBy !== req.user.id && req.user.role !== 'ADMIN') {
+    throw ApiError.forbidden('You are not authorized to view this application');
+  }
+
+  res.json({ data: application });
+}
+
 module.exports = {
   create,
   list,
@@ -108,4 +175,8 @@ module.exports = {
   update,
   close,
   apply,
+  updateApplicationStatus,
+  listApplicationsForJob,
+  listMyApplications,
+  getApplicationById,
 };

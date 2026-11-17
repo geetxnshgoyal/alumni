@@ -22,6 +22,7 @@ router.use('/admin', require('../modules/admin/admin.routes'));
 router.use('/connections', require('../modules/connections/connections.routes'));
 router.use('/messages', require('../modules/messages/messages.routes'));
 router.use('/jobs', require('../modules/jobs/jobs.routes'));
+router.use('/applications', require('../modules/jobs/applications.routes'));
 // router.use('/events', require('../modules/events/events.routes'));
 
 // Member C - donations, success stories, surveys, feedback
