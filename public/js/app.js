@@ -7,6 +7,9 @@ import { renderProfile } from './pages/profile.js';
 import { renderNotifications } from './pages/notifications.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderCampaigns } from './pages/campaigns.js';
+import { renderStories } from './pages/stories.js';
+import { renderSurveys } from './pages/surveys.js';
+import { renderFeedback } from './pages/feedback.js';
 
 function updateNavigation() {
   const user = auth.getUser();
@@ -68,6 +71,18 @@ function updateNavigation() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span>Giving & Campaigns</span>
           </a>
+          <a href="#/stories" class="nav-item ${activePath === '#/stories' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+            <span>Success Stories</span>
+          </a>
+          <a href="#/surveys" class="nav-item ${activePath === '#/surveys' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>Surveys</span>
+          </a>
+          <a href="#/feedback" class="nav-item ${activePath === '#/feedback' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Feedback</span>
+          </a>
         </div>
 
         <div class="nav-section">
@@ -108,6 +123,18 @@ function updateNavigation() {
           <a href="#/campaigns" class="nav-item ${activePath === '#/campaigns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span>Giving & Campaigns</span>
+          </a>
+          <a href="#/stories" class="nav-item ${activePath === '#/stories' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+            <span>Success Stories</span>
+          </a>
+          <a href="#/surveys" class="nav-item ${activePath === '#/surveys' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>Surveys</span>
+          </a>
+          <a href="#/feedback" class="nav-item ${activePath === '#/feedback' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Feedback</span>
           </a>
         </div>
         <div class="nav-section" style="margin-top:auto; padding: 12px; background: var(--surface-2); border-radius: var(--radius);">
@@ -223,7 +250,7 @@ async function router() {
   document.body.classList.toggle('page-auth', path === '#/auth');
 
   // Protect private routes
-  if (!auth.isAuthenticated() && !['#/', '#/auth', '#/directory', '#/campaigns'].includes(path)) {
+  if (!auth.isAuthenticated() && !['#/', '#/auth', '#/directory', '#/campaigns', '#/stories', '#/surveys', '#/feedback'].includes(path)) {
     window.location.hash = '#/auth';
     return;
   }
@@ -242,6 +269,15 @@ async function router() {
       break;
     case '#/campaigns':
       await renderCampaigns(app);
+      break;
+    case '#/stories':
+      await renderStories(app);
+      break;
+    case '#/surveys':
+      await renderSurveys(app);
+      break;
+    case '#/feedback':
+      await renderFeedback(app);
       break;
     case '#/profile':
       await renderProfile(app);

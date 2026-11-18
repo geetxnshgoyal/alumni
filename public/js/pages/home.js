@@ -132,6 +132,32 @@ export async function renderHome(container) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
 
+          <a href="#/stories" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Alumni Success Stories</strong>
+                <span class="small muted">Explore career journeys, startup milestones, and leadership stories</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
+          <a href="#/surveys" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--accent-gold-light); color:var(--functional-amber); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Surveys & Questionnaires</strong>
+                <span class="small muted">Shape department curriculum and evaluate mentorship initiatives</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
           ${
             auth.isAdmin()
               ? `
