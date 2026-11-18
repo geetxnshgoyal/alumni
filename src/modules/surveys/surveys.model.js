@@ -270,11 +270,120 @@ async function getUserResponse(surveyId, userId, db = { query }) {
   return response;
 }
 
+async function getSurveyResults(surveyId, db = { query }) {
+  const survey = await findSurveyById(surveyId, {}, db);
+  if (!survey) return null;
+
+  const countRes = await db.query(
+    'SELECT COUNT(*)::int AS total FROM survey_response WHERE survey_id = $1',
+    [surveyId]
+  );
+  const totalResponses = countRes.rows[0]?.total || 0;
+
+  const questionResults = [];
+
+  for (const q of survey.questions) {
+    const qData = {
+      questionId: q.questionId,
+      questionText: q.questionText,
+      questionType: q.questionType,
+      position: q.position,
+      totalAnswers: 0
+    };
+
+    if (q.questionType === 'RATING') {
+      const rRes = await db.query(
+        `SELECT COUNT(ra.rating_value)::int AS count,
+                ROUND(AVG(ra.rating_value), 2)::float AS average,
+                MIN(ra.rating_value)::int AS min,
+                MAX(ra.rating_value)::int AS max
+         FROM response_answer ra
+         JOIN survey_response sr ON sr.response_id = ra.response_id
+         WHERE sr.survey_id = $1 AND ra.question_id = $2 AND ra.rating_value IS NOT NULL`,
+        [surveyId, q.questionId]
+      );
+      const distRes = await db.query(
+        `SELECT ra.rating_value AS rating, COUNT(*)::int AS count
+         FROM response_answer ra
+         JOIN survey_response sr ON sr.response_id = ra.response_id
+         WHERE sr.survey_id = $1 AND ra.question_id = $2 AND ra.rating_value IS NOT NULL
+         GROUP BY ra.rating_value
+         ORDER BY ra.rating_value ASC`,
+        [surveyId, q.questionId]
+      );
+
+      const distMap = Object.fromEntries(distRes.rows.map(r => [r.rating, r.count]));
+      qData.totalAnswers = rRes.rows[0]?.count || 0;
+      qData.averageRating = rRes.rows[0]?.average || 0;
+      qData.minRating = rRes.rows[0]?.min || null;
+      qData.maxRating = rRes.rows[0]?.max || null;
+      qData.distribution = {
+        1: distMap[1] || 0,
+        2: distMap[2] || 0,
+        3: distMap[3] || 0,
+        4: distMap[4] || 0,
+        5: distMap[5] || 0
+      };
+    } else if (['SINGLE_CHOICE', 'MULTI_CHOICE'].includes(q.questionType)) {
+      const optStats = [];
+      const choiceRes = await db.query(
+        `SELECT ac.option_id AS "optionId", COUNT(*)::int AS count
+         FROM answer_choice ac
+         JOIN response_answer ra ON ra.answer_id = ac.answer_id
+         JOIN survey_response sr ON sr.response_id = ra.response_id
+         WHERE sr.survey_id = $1 AND ra.question_id = $2
+         GROUP BY ac.option_id`,
+        [surveyId, q.questionId]
+      );
+      const choiceMap = Object.fromEntries(choiceRes.rows.map(r => [r.optionId, r.count]));
+      let answersCount = 0;
+
+      for (const opt of q.options) {
+        const count = choiceMap[opt.optionId] || 0;
+        answersCount += count;
+        const percentage = totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0;
+        optStats.push({
+          optionId: opt.optionId,
+          optionText: opt.optionText,
+          count,
+          percentage
+        });
+      }
+
+      qData.totalAnswers = answersCount;
+      qData.options = optStats;
+    } else if (q.questionType === 'TEXT') {
+      const textRes = await db.query(
+        `SELECT ra.answer_text AS "answerText", sr.submitted_at AS "submittedAt"
+         FROM response_answer ra
+         JOIN survey_response sr ON sr.response_id = ra.response_id
+         WHERE sr.survey_id = $1 AND ra.question_id = $2 AND ra.answer_text IS NOT NULL AND TRIM(ra.answer_text) <> ''
+         ORDER BY sr.submitted_at DESC
+         LIMIT 50`,
+        [surveyId, q.questionId]
+      );
+      qData.totalAnswers = textRes.rows.length;
+      qData.textAnswers = textRes.rows;
+    }
+
+    questionResults.push(qData);
+  }
+
+  return {
+    surveyId: survey.surveyId,
+    title: survey.title,
+    status: survey.status,
+    totalResponses,
+    questions: questionResults
+  };
+}
+
 module.exports = {
   createSurveyWithQuestions,
   findSurveyById,
   listSurveys,
   updateSurveyStatus,
   submitResponse,
-  getUserResponse
+  getUserResponse,
+  getSurveyResults
 };

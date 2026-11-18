@@ -149,11 +149,30 @@ async function getMyResponse(req, res, next) {
   }
 }
 
+async function getSurveyResults(req, res, next) {
+  try {
+    const surveyId = Number(req.params.id);
+    if (!surveyId || Number.isNaN(surveyId)) {
+      throw new ApiError(400, 'Invalid survey ID');
+    }
+
+    const results = await surveys.getSurveyResults(surveyId);
+    if (!results) {
+      throw new ApiError(404, 'Survey not found');
+    }
+
+    res.json({ data: results });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   createSurvey,
   listSurveys,
   getSurveyById,
   updateSurveyStatus,
   submitResponse,
-  getMyResponse
+  getMyResponse,
+  getSurveyResults
 };

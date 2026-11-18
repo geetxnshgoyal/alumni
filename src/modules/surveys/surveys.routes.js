@@ -15,6 +15,7 @@ const router = Router();
 router.get('/', optionalAuth, validate({ query: listSurveysQuerySchema }), controller.listSurveys);
 router.get('/:id', optionalAuth, controller.getSurveyById);
 router.get('/:id/my-response', authenticate, controller.getMyResponse);
+router.get('/:id/results', authenticate, authorize('ADMIN'), controller.getSurveyResults);
 
 // Admin survey creation and status update
 router.post('/', authenticate, authorize('ADMIN'), validate({ body: createSurveySchema }), controller.createSurvey);
