@@ -239,6 +239,15 @@ async function seed() {
         'Our electric mobility engineering division has 5 open graduate apprenticeships. We would love to host an exclusive campus recruitment round.'
       ]);
     }
+
+    // Seed Events
+    await db.query(`
+      INSERT INTO event (created_by, title, description, event_type, mode, venue_or_link, start_at, end_at, capacity, registration_deadline, status)
+      VALUES 
+        ($1, 'Grand Alumni Homecoming & Reunion 2026', 'Celebrate memories, re-connect with batchmates, and witness campus growth at our flagship reunion gala.', 'REUNION', 'OFFLINE', 'Campus Central Grounds & Auditorium', NOW() + INTERVAL '30 days', NOW() + INTERVAL '30 days 6 hours', 250, NOW() + INTERVAL '25 days', 'OPEN'),
+        ($1, 'AI & Distributed Systems Workshop', 'Interactive masterclass on LLMs and high-concurrency systems presented by alumni engineering leaders.', 'WORKSHOP', 'ONLINE', 'https://meet.google.com/alumni-ai-workshop', NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days 3 hours', 100, NOW() + INTERVAL '12 days', 'OPEN')
+      ON CONFLICT DO NOTHING
+    `, [adminId]);
   });
 
   console.log(`Seed complete. Demo alumni/students log in with password: ${DEMO_PASSWORD}`);
