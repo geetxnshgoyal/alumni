@@ -103,6 +103,142 @@ async function seed() {
       await users.setTags(db, 'skills', id, skills);
       await users.setTags(db, 'interests', id, interests);
     }
+
+    // Seed Member C Modules: Campaigns, Success Stories, Surveys, and Feedback
+    const aaravUser = (await db.query("SELECT user_id FROM users WHERE email = 'aarav@alumni.test'")).rows[0];
+    const diyaUser = (await db.query("SELECT user_id FROM users WHERE email = 'diya@alumni.test'")).rows[0];
+    const kabirUser = (await db.query("SELECT user_id FROM users WHERE email = 'kabir@alumni.test'")).rows[0];
+
+    // Seed Success Stories
+    if (aaravUser) {
+      await db.query(`
+        INSERT INTO success_story (author_id, title, body, category, status, reviewed_by, reviewed_at, review_note)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
+        ON CONFLICT DO NOTHING
+      `, [
+        aaravUser.user_id,
+        'From Campus Coding Club to Engineering Leader at Google',
+        'Reflecting on my years at college, the student tech symposiums and algorithmic competitions gave me the foundational grit for distributed computing. Today leading backend infrastructure teams at Google, I encourage every student to deeply master algorithms, networks, and Unix fundamentals.',
+        'CAREER',
+        'APPROVED',
+        adminId,
+        'Inspiring alumni journey approved for campus spotlight.'
+      ]);
+    }
+
+    if (diyaUser) {
+      await db.query(`
+        INSERT INTO success_story (author_id, title, body, category, status, reviewed_by, reviewed_at, review_note)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
+        ON CONFLICT DO NOTHING
+      `, [
+        diyaUser.user_id,
+        'Building Product Strategy Across Global Engineering Teams',
+        'Transitioning from an engineering graduate to product leadership at Microsoft required blending systems thinking with customer empathy. Connecting back with the college community and mentoring juniors has been one of the most rewarding parts of my career.',
+        'LEADERSHIP',
+        'APPROVED',
+        adminId,
+        'Featured story on international tech career paths.'
+      ]);
+    }
+
+    if (kabirUser) {
+      await db.query(`
+        INSERT INTO success_story (author_id, title, body, category, status)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT DO NOTHING
+      `, [
+        kabirUser.user_id,
+        'Scaling Sustainable Electric Mobility at Tata Motors',
+        'Leading plant modernization and lean assembly lines for India’s next-generation electric vehicles began in our college mechanical workshop. Here is my perspective on how hardware and software engineering are converging in automotive.',
+        'INNOVATION',
+        'SUBMITTED'
+      ]);
+    }
+
+    // Seed Survey with Questions & Options
+    const { rows: surveyRows } = await db.query(`
+      SELECT survey_id FROM survey WHERE title = 'Alumni Mentorship & Industry Readiness Survey 2026'
+    `);
+    let surveyId;
+    if (surveyRows.length === 0) {
+      const res = await db.query(`
+        INSERT INTO survey (created_by, title, description, status, opens_at)
+        VALUES ($1, $2, $3, 'ACTIVE', NOW())
+        RETURNING survey_id
+      `, [
+        adminId,
+        'Alumni Mentorship & Industry Readiness Survey 2026',
+        'Help shape our 2026-2027 curriculum, mentorship circles, and hands-on laboratory workshops for current undergraduates.'
+      ]);
+      surveyId = res.rows[0].survey_id;
+
+      // Question 1: Rating
+      await db.query(`
+        INSERT INTO survey_question (survey_id, question_text, question_type, is_required, position)
+        VALUES ($1, $2, 'RATING', TRUE, 1)
+      `, [surveyId, 'How would you rate the current industry relevance of core engineering subjects (1: Outdated, 5: Highly Relevant)?']);
+
+      // Question 2: Multi Choice
+      const q2Res = await db.query(`
+        INSERT INTO survey_question (survey_id, question_text, question_type, is_required, position)
+        VALUES ($1, $2, 'MULTI_CHOICE', TRUE, 2)
+        RETURNING question_id
+      `, [surveyId, 'Which domains should our departments prioritize for elective coursework?']);
+      const q2Id = q2Res.rows[0].question_id;
+      for (const [pos, opt] of [['1', 'Cloud & Distributed Systems'], ['2', 'AI & Machine Learning'], ['3', 'Embedded Systems & Robotics'], ['4', 'Fullstack & Mobile Engineering']].entries()) {
+        await db.query(`
+          INSERT INTO question_option (question_id, option_text, position)
+          VALUES ($1, $2, $3)
+        `, [q2Id, opt[1], pos + 1]);
+      }
+
+      // Question 3: Single Choice
+      const q3Res = await db.query(`
+        INSERT INTO survey_question (survey_id, question_text, question_type, is_required, position)
+        VALUES ($1, $2, 'SINGLE_CHOICE', TRUE, 3)
+        RETURNING question_id
+      `, [surveyId, 'Would you be open to offering virtual mentorship or mock interviews for final-year students?']);
+      const q3Id = q3Res.rows[0].question_id;
+      for (const [pos, opt] of [['1', 'Yes, count me in for virtual sessions'], ['2', 'Yes, for campus visits & workshops'], ['3', 'Not this semester']].entries()) {
+        await db.query(`
+          INSERT INTO question_option (question_id, option_text, position)
+          VALUES ($1, $2, $3)
+        `, [q3Id, opt[1], pos + 1]);
+      }
+
+      // Question 4: Text
+      await db.query(`
+        INSERT INTO survey_question (survey_id, question_text, question_type, is_required, position)
+        VALUES ($1, $2, 'TEXT', FALSE, 4)
+      `, [surveyId, 'Any additional recommendations for university leadership or student development?']);
+    }
+
+    // Seed Sample Feedback
+    if (aaravUser) {
+      await db.query(`
+        INSERT INTO feedback (user_id, category, message, status, admin_response, responded_by, responded_at)
+        VALUES ($1, $2, $3, 'IN_REVIEW', $4, $5, NOW())
+        ON CONFLICT DO NOTHING
+      `, [
+        aaravUser.user_id,
+        'PLATFORM',
+        'The new GradLink UI design and campaign contributions page look great! Could we also get automated calendar invites when networking connection requests are accepted?',
+        'Thank you Aarav! Calendar export and sync are being evaluated for the upcoming release.',
+        adminId
+      ]);
+    }
+    if (kabirUser) {
+      await db.query(`
+        INSERT INTO feedback (user_id, category, message, status)
+        VALUES ($1, $2, $3, 'OPEN')
+        ON CONFLICT DO NOTHING
+      `, [
+        kabirUser.user_id,
+        'CAREER',
+        'Our electric mobility engineering division has 5 open graduate apprenticeships. We would love to host an exclusive campus recruitment round.'
+      ]);
+    }
   });
 
   console.log(`Seed complete. Demo alumni/students log in with password: ${DEMO_PASSWORD}`);
