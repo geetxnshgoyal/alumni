@@ -1,6 +1,6 @@
-# GEC Alumni Association Platform
+# GradLink — Alumni Network
 
-Web platform (installable on phones as a PWA) for the alumni association of Government Engineering College:
+Web platform (installable on phones as a PWA) connecting students and alumni:
 alumni registration and verification, a searchable alumni directory, networking, jobs, events, donations,
 success stories, and feedback/surveys.
 
