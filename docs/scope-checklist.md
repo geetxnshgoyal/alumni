@@ -39,13 +39,13 @@ Lead items L1–L9 can be shown live with `npm run demo` (see README → Checkpo
 
 | # | Item | Weight | Acceptance test | Status |
 |---|---|---|---|---|
-| C1 | Campaigns: create (admin), list with progress (raised vs goal) | 5.3 | Amount raised = sum of SUCCESS donations only | ☐ |
-| C2 | Donations with payment gateway in **test mode** + transactions | 7 | Order created → payment verified (signature check) → donation SUCCESS; failed payment recorded | ☐ |
-| C3 | Donation receipts + donor history | 4 | Unique receipt number generated once per successful donation | ☐ |
-| C4 | Success stories: submit, admin review, publish | 5 | Only APPROVED stories are public; author notified on review | ☐ |
-| C5 | Surveys: create with questions/options (admin), respond | 6 | One response per user; required questions enforced; answer types validated | ☐ |
-| C6 | Survey results + feedback (submit, admin reply/status) | 6 | Aggregated results per question; feedback status OPEN → IN_REVIEW → CLOSED | ☐ |
-| | **Subtotal** | **33.3** | | |
+| C1 | Campaigns: create (admin), list with progress (raised vs goal) | 5.3 | Amount raised = sum of SUCCESS donations only | ☑ 9 Nov 2026 (campaigns.test.js & PR #24) |
+| C2 | Donations with payment gateway in **test mode** + transactions | 7 | Order created → payment verified (signature check) → donation SUCCESS; failed payment recorded | ☑ 16 Nov 2026 (donations.test.js & PR #26) |
+| C3 | Donation receipts + donor history | 4 | Unique receipt number generated once per successful donation | ☑ 16 Nov 2026 (donations.test.js & PR #29) |
+| C4 | Success stories: submit, admin review, publish | 5 | Only APPROVED stories are public; author notified on review | ☑ 18 Nov 2026 (stories.test.js & stories.js) |
+| C5 | Surveys: create with questions/options (admin), respond | 6 | One response per user; required questions enforced; answer types validated | ☑ 18 Nov 2026 (surveys.test.js & surveys.js) |
+| C6 | Survey results + feedback (submit, admin reply/status) | 6 | Aggregated results per question; feedback status OPEN → IN_REVIEW → CLOSED | ☑ 18 Nov 2026 (feedback.test.js & feedback.js) |
+| | **Subtotal** | **33.3** | | **33.3% Demonstrated** |
 
 **Total: 100%**
 
