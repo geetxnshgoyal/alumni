@@ -4,6 +4,9 @@ import { $, avatar, badge, esc, formatDateTime, loading, toast } from '../ui.js'
 const TABS = [
   ['overview', 'Overview & Stats'],
   ['verification', 'Verification Queue'],
+  ['stories', 'Stories Queue'],
+  ['surveys', 'Surveys & Analytics'],
+  ['feedback', 'Feedback Inbox'],
   ['users', 'User Directory'],
   ['departments', 'Departments'],
   ['audit', 'Security Audit Trail'],
@@ -40,7 +43,16 @@ export async function renderAdmin(el) {
   const tab = el.querySelector('#tab-content');
   tab.innerHTML = loading();
 
-  const handlers = { overview, users: usersTab, verification, departments: departmentsTab, audit: auditTab };
+  const handlers = {
+    overview,
+    users: usersTab,
+    verification,
+    departments: departmentsTab,
+    audit: auditTab,
+    stories: storiesTab,
+    surveys: surveysTab,
+    feedback: feedbackTab
+  };
   if (handlers[currentTab]) {
     await handlers[currentTab](tab);
   }
@@ -419,5 +431,341 @@ async function auditTab(tab, filters = {}) {
     });
   } catch (err) {
     tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load audit logs: ${esc(err.message)}</div>`;
+  }
+}
+
+async function storiesTab(tab) {
+  try {
+    const res = await api.getPage('/stories', { status: 'SUBMITTED' });
+    const stories = res.data || [];
+
+    tab.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Success Stories Moderation</h3>
+            <p class="small muted" style="margin: 0;">${stories.length} submissions pending review</p>
+          </div>
+        </div>
+
+        ${!stories.length ? `
+          <div style="text-align: center; padding: 48px var(--space-4);">
+            <div style="font-size: 32px; margin-bottom: 12px;">✅</div>
+            <h3 style="margin-bottom: 6px;">Moderation queue is clear</h3>
+            <p class="small muted" style="margin: 0;">No alumni stories currently awaiting approval.</p>
+          </div>
+        ` : `
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Author</th><th>Title & Category</th><th>Submitted</th><th>Snippet</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${stories.map(s => `
+                  <tr>
+                    <td>
+                      <strong>${esc(s.authorName)}</strong>
+                      <div class="small muted">${esc(s.authorCompany || 'Alumni')}</div>
+                    </td>
+                    <td>
+                      <strong>${esc(s.title)}</strong>
+                      <div><span class="badge badge-info" style="font-size:10px;">${esc(s.category)}</span></div>
+                    </td>
+                    <td class="small muted">${formatDateTime(s.createdAt)}</td>
+                    <td class="small text-muted" style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(s.body)}</td>
+                    <td>
+                      <div style="display:flex; gap:6px;">
+                        <button class="btn btn-sm btn-outline-success approve-story-btn" data-id="${s.storyId}">Approve</button>
+                        <button class="btn btn-sm btn-outline-danger reject-story-btn" data-id="${s.storyId}">Reject</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    `;
+
+    tab.querySelectorAll('.approve-story-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await api.patch(`/stories/${btn.dataset.id}/review`, { status: 'APPROVED', reviewNote: 'Approved for publication' });
+          toast('Story approved and published!', 'success');
+          storiesTab(tab);
+        } catch (err) {
+          toast(err.message || 'Approval failed', 'error');
+        }
+      });
+    });
+
+    tab.querySelectorAll('.reject-story-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const note = prompt('Enter a reason for rejection to send to the author:');
+        if (note === null) return;
+        try {
+          await api.patch(`/stories/${btn.dataset.id}/review`, { status: 'REJECTED', reviewNote: note || 'Submission guidelines not met' });
+          toast('Story rejected and author notified', 'success');
+          storiesTab(tab);
+        } catch (err) {
+          toast(err.message || 'Rejection failed', 'error');
+        }
+      });
+    });
+  } catch (err) {
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load stories queue: ${esc(err.message)}</div>`;
+  }
+}
+
+async function surveysTab(tab) {
+  try {
+    const res = await api.getPage('/surveys');
+    const surveys = res.data || [];
+
+    tab.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Surveys & Feedback Analytics</h3>
+            <p class="small muted" style="margin: 0;">${surveys.length} total questionnaires</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Title</th><th>Status</th><th>Questions</th><th>Responses</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${surveys.map(s => `
+                <tr>
+                  <td>
+                    <strong>${esc(s.title)}</strong>
+                    <div class="small muted">${esc(s.description || '')}</div>
+                  </td>
+                  <td>${badge(s.status)}</td>
+                  <td><strong>${s.questionCount}</strong> questions</td>
+                  <td><strong style="color:var(--primary);">${s.responseCount}</strong> responses</td>
+                  <td>
+                    <button class="btn btn-sm btn-secondary view-analytics-btn" data-id="${s.surveyId}">
+                      View Analytics
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="survey-analytics-modal"></div>
+    `;
+
+    tab.querySelectorAll('.view-analytics-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const modalEl = tab.querySelector('#survey-analytics-modal');
+        modalEl.innerHTML = loading('Loading survey metrics...');
+        try {
+          const res = await api.get(`/surveys/${btn.dataset.id}/results`);
+          const data = res.data || res;
+
+          modalEl.innerHTML = `
+            <div class="modal-backdrop">
+              <div class="modal" style="max-width: 680px; max-height: 85vh; overflow-y: auto;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                  <div>
+                    <span class="caption" style="color:var(--primary);">Survey Analytics</span>
+                    <h2 style="font-size: 20px; font-weight:700; margin: 4px 0 0;">${esc(data.title)}</h2>
+                    <span class="small muted">Total Completed Responses: <strong>${data.totalResponses}</strong></span>
+                  </div>
+                  <button id="close-analytics" class="btn btn-ghost btn-sm" style="font-size:18px;">✕</button>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                  ${data.questions.map((q, idx) => `
+                    <div style="padding:14px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:var(--radius-sm);">
+                      <strong style="display:block; font-size:14px; margin-bottom:8px;">${idx + 1}. ${esc(q.questionText)}</strong>
+                      
+                      ${q.questionType === 'RATING' ? `
+                        <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px;">
+                          <div style="font-size:28px; font-weight:800; color:var(--primary);">★ ${q.averageRating} <span style="font-size:14px; color:var(--text-muted); font-weight:500;">/ 5</span></div>
+                          <div class="small muted">Range: ${q.minRating ?? '—'} to ${q.maxRating ?? '—'} (${q.totalAnswers} answers)</div>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                          ${[1, 2, 3, 4, 5].map(star => `
+                            <div style="flex:1; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--border); border-radius:4px; font-size:11px;">
+                              <div>${star}★</div>
+                              <strong>${q.distribution ? q.distribution[star] : 0}</strong>
+                            </div>
+                          `).join('')}
+                        </div>
+                      ` : ''}
+
+                      ${q.options ? `
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                          ${q.options.map(opt => `
+                            <div>
+                              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px;">
+                                <span>${esc(opt.optionText)}</span>
+                                <strong>${opt.count} (${opt.percentage}%)</strong>
+                              </div>
+                              <div class="progress-track" style="height:6px;">
+                                <div class="progress-fill" style="width: ${opt.percentage}%;"></div>
+                              </div>
+                            </div>
+                          `).join('')}
+                        </div>
+                      ` : ''}
+
+                      ${q.textAnswers ? `
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                          ${!q.textAnswers.length ? `<span class="small muted">No text answers submitted.</span>` : q.textAnswers.slice(0, 5).map(t => `
+                            <div style="padding:8px 10px; background:var(--surface); border-left:3px solid var(--primary); font-size:13px;">
+                              "${esc(t.answerText)}"
+                            </div>
+                          `).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+
+                <div style="text-align:right; margin-top:20px;">
+                  <button id="close-analytics-btn" class="btn btn-secondary">Close Analytics</button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          function close() { modalEl.innerHTML = ''; }
+          modalEl.querySelector('#close-analytics').onclick = close;
+          modalEl.querySelector('#close-analytics-btn').onclick = close;
+        } catch (err) {
+          toast(err.message || 'Could not load analytics', 'error');
+          modalEl.innerHTML = '';
+        }
+      });
+    });
+  } catch (err) {
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load surveys: ${esc(err.message)}</div>`;
+  }
+}
+
+async function feedbackTab(tab) {
+  try {
+    const res = await api.getPage('/feedback');
+    const items = res.data || [];
+
+    tab.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>User Feedback & Support Inbox</h3>
+            <p class="small muted" style="margin: 0;">${items.length} community inquiries</p>
+          </div>
+        </div>
+
+        ${!items.length ? `
+          <div style="text-align: center; padding: 48px var(--space-4);">
+            <div style="font-size: 32px; margin-bottom: 12px;">📬</div>
+            <h3 style="margin-bottom: 6px;">Inbox is empty</h3>
+            <p class="small muted" style="margin: 0;">No new user feedback submissions.</p>
+          </div>
+        ` : `
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Category</th><th>Message</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${items.map(f => `
+                  <tr>
+                    <td>
+                      <strong>${esc(f.userName)}</strong>
+                      <div class="small muted">${esc(f.userEmail)}</div>
+                    </td>
+                    <td><span class="badge badge-info">${esc(f.category)}</span></td>
+                    <td class="small" style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(f.message)}</td>
+                    <td>${badge(f.status)}</td>
+                    <td class="small muted">${formatDateTime(f.createdAt)}</td>
+                    <td>
+                      <button class="btn btn-sm btn-secondary reply-feedback-btn" data-id="${f.feedbackId}">
+                        Respond
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+      <div id="feedback-reply-modal"></div>
+    `;
+
+    tab.querySelectorAll('.reply-feedback-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const item = items.find(f => f.feedbackId == btn.dataset.id);
+        if (!item) return;
+
+        const modalEl = tab.querySelector('#feedback-reply-modal');
+        modalEl.innerHTML = `
+          <div class="modal-backdrop">
+            <div class="modal" style="max-width: 580px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0;">Respond to Feedback</h3>
+                <button id="close-reply-modal" class="btn btn-ghost btn-sm" style="font-size:18px;">✕</button>
+              </div>
+
+              <div style="padding:12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <strong>${esc(item.userName)} (${esc(item.category)})</strong>
+                  <span class="small muted">${formatDateTime(item.createdAt)}</span>
+                </div>
+                <p style="font-size:14px; margin:0; line-height:1.4;">${esc(item.message)}</p>
+              </div>
+
+              <form id="feedback-reply-form" style="display:flex; flex-direction:column; gap:12px;">
+                <div class="field">
+                  <label class="label">Update Status</label>
+                  <select name="status" class="select">
+                    <option value="OPEN" ${item.status === 'OPEN' ? 'selected' : ''}>OPEN (Pending Review)</option>
+                    <option value="IN_REVIEW" ${item.status === 'IN_REVIEW' ? 'selected' : ''}>IN_REVIEW (Under Investigation)</option>
+                    <option value="CLOSED" ${item.status === 'CLOSED' ? 'selected' : ''}>CLOSED (Resolved)</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="label">Admin Response (Will notify user)</label>
+                  <textarea name="adminResponse" class="textarea" style="min-height:90px;" placeholder="Write response to user...">${esc(item.adminResponse || '')}</textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                  <button type="button" id="cancel-reply-btn" class="btn btn-secondary">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Save & Send Reply</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+
+        function close() { modalEl.innerHTML = ''; }
+        modalEl.querySelector('#close-reply-modal').onclick = close;
+        modalEl.querySelector('#cancel-reply-btn').onclick = close;
+
+        const form = modalEl.querySelector('#feedback-reply-form');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(form);
+          try {
+            await api.patch(`/feedback/${item.feedbackId}`, {
+              status: fd.get('status'),
+              adminResponse: fd.get('adminResponse').trim() || null
+            });
+            toast('Feedback updated and reply sent!', 'success');
+            close();
+            feedbackTab(tab);
+          } catch (err) {
+            toast(err.message || 'Update failed', 'error');
+          }
+        });
+      });
+    });
+  } catch (err) {
+    tab.innerHTML = `<div class="card" style="color:var(--danger); padding:var(--space-5);">Failed to load feedback: ${esc(err.message)}</div>`;
   }
 }
