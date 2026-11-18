@@ -63,6 +63,9 @@ async function overview(tab) {
     const data = await api.get('/admin/stats');
     const total = (role) => (data.users || []).filter((u) => u.role === role).reduce((s, u) => s + u.count, 0);
     const v = data.alumniVerification || {};
+    const m = data.modules || {};
+    const moduleStat = (label, value) =>
+      `<div class="stat-card"><div class="stat-header"><span class="stat-label">${label}</span></div><div class="stat-value">${value ?? 0}</div></div>`;
 
     tab.innerHTML = `
       <div class="grid grid-3" style="margin-bottom: var(--space-5);">
@@ -98,6 +101,16 @@ async function overview(tab) {
           <div class="stat-value" style="color: var(--danger);">${v.PENDING ?? 0}</div>
           <div class="stat-sub">Pending admin approval</div>
         </div>
+      </div>
+
+      <div class="grid grid-3" style="margin-bottom: var(--space-5);">
+        ${moduleStat('Accepted Connections', m.connections)}
+        ${moduleStat('Open Jobs', m.openJobs)}
+        ${moduleStat('Job Applications', m.jobApplications)}
+        ${moduleStat('Active Campaigns', m.activeCampaigns)}
+        ${moduleStat('Donations Raised', `₹${Number(m.donationsRaised || 0).toLocaleString('en-IN')}`)}
+        ${moduleStat('Stories to Review', m.storiesToReview)}
+        ${moduleStat('Open Feedback', m.openFeedback)}
       </div>
 
       <div class="card">

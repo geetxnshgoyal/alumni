@@ -93,6 +93,10 @@ describe('Admin API', () => {
       const res = await api().get('/api/admin/stats').set(auth(admin.token));
       expect(res.status).toBe(200);
       expect(res.body.data.users).toBeDefined();
+      expect(res.body.data.modules).toEqual({
+        connections: 0, openJobs: 0, jobApplications: 0, activeCampaigns: 0,
+        donationsRaised: 0, storiesToReview: 0, openFeedback: 0,
+      });
     });
 
     test('admin actions are audited and filterable', async () => {

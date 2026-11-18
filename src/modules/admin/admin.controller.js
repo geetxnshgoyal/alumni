@@ -16,11 +16,21 @@ async function stats(req, res) {
        LEFT JOIN alumni_profile ap ON ap.dept_id = d.dept_id AND ap.verification_status = 'VERIFIED'
       GROUP BY d.dept_id ORDER BY alumni DESC, d.dept_name`
   );
+  const { rows: [modules] } = await query(
+    `SELECT (SELECT COUNT(*) FROM connection WHERE status = 'ACCEPTED')::int AS "connections",
+            (SELECT COUNT(*) FROM job_post WHERE status = 'OPEN')::int AS "openJobs",
+            (SELECT COUNT(*) FROM job_application)::int AS "jobApplications",
+            (SELECT COUNT(*) FROM campaign WHERE status = 'ACTIVE')::int AS "activeCampaigns",
+            (SELECT COALESCE(SUM(amount), 0) FROM donation WHERE donation_status = 'SUCCESS')::float AS "donationsRaised",
+            (SELECT COUNT(*) FROM success_story WHERE status = 'SUBMITTED')::int AS "storiesToReview",
+            (SELECT COUNT(*) FROM feedback WHERE status <> 'CLOSED')::int AS "openFeedback"`
+  );
   res.json({
     data: {
       users: await users.countsByRole(),
       alumniVerification: Object.fromEntries(verification.map((r) => [r.status, r.count])),
       byDepartment,
+      modules,
     },
   });
 }
