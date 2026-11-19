@@ -295,10 +295,43 @@ async function listUsers({ page = 1, limit = 20, role, accountStatus, q } = {}) 
   return { rows, total };
 }
 
+async function findByGoogleId(googleId) {
+  const { rows } = await query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+  return rows[0] || null;
+}
+
+async function linkGoogleId(userId, googleId, avatarUrl = null) {
+  const { rows } = await query(
+    `UPDATE users
+        SET google_id = $2,
+            avatar_url = COALESCE(avatar_url, $3),
+            auth_provider = 'GOOGLE',
+            email_verified = TRUE
+      WHERE user_id = $1
+      RETURNING user_id, email, full_name, role, account_status, google_id`,
+    [userId, googleId, avatarUrl]
+  );
+  return rows[0] || null;
+}
+
+async function createUserWithOAuth(db, { email, fullName, googleId, role = 'ALUMNI', avatarUrl = null }) {
+  const client = db || { query };
+  const { rows } = await client.query(
+    `INSERT INTO users (email, full_name, role, google_id, auth_provider, email_verified, avatar_url)
+     VALUES ($1, $2, $3, $4, 'GOOGLE', TRUE, $5)
+     RETURNING user_id`,
+    [email.toLowerCase().trim(), fullName.trim(), role, googleId, avatarUrl]
+  );
+  return rows[0].user_id;
+}
+
 module.exports = {
   MAX_FAILED_LOGINS,
   findByEmail,
   findById,
+  findByGoogleId,
+  linkGoogleId,
+  createUserWithOAuth,
   createUser,
   updateUser,
   updatePassword,

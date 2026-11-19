@@ -216,5 +216,36 @@ check "user notified on feedback update" true "$(jq '[.data[] | select(.type == 
 req PATCH "/api/feedback/$FB_ID" "$ADMIN_TOKEN" '{"status":"CLOSED","adminResponse":"Approved and scheduled for next semester."}'
 check "admin updates feedback to CLOSED -> 200" "200 CLOSED" "$STATUS $(jq -r '.data.status' <<<"$BODY")"
 
+section "L16 Modern Authentication: Dual Tokens, Rotation, Replay Attack Detection & Google OAuth2"
+# 1. Dual Token issuance on login
+login "$ADMIN_EMAIL" "$ADMIN_PASSWORD"
+CHECK_REFRESH_TOKEN=$(jq -r '.data.refreshToken' <<<"$BODY")
+check "dual tokens: refresh token returned" true "$(jq '.data.refreshToken | type == "string"' <<<"$BODY")"
+
+# 2. Token refresh & rotation (Slide 14)
+req POST /api/auth/refresh "" "{\"refreshToken\":\"$CHECK_REFRESH_TOKEN\"}"
+check "POST /api/auth/refresh -> 200 (rotated)" 200 "$STATUS"
+ROTATED_TOKEN=$(jq -r '.data.refreshToken' <<<"$BODY")
+check "new rotated refresh token issued" true "$([ "$CHECK_REFRESH_TOKEN" != "$ROTATED_TOKEN" ] && echo true || echo false)"
+
+# 3. Replay attack detection (Slide 15)
+req POST /api/auth/refresh "" "{\"refreshToken\":\"$CHECK_REFRESH_TOKEN\"}"
+check "replay attack with old rotated token -> 403" 403 "$STATUS"
+
+# 4. Safe Logout (Slide 16)
+req POST /api/auth/logout "" "{\"refreshToken\":\"$ROTATED_TOKEN\"}"
+check "safe logout revokes token -> 200" 200 "$STATUS"
+
+# 5. Google OAuth 2.0 / OIDC Identity Proof & Sign-in (Slide 17-21)
+OAUTH_SUB="g_eval_${RUN}"
+OAUTH_EMAIL="google.eval.${RUN}@gec.edu"
+req POST /api/auth/oauth/google "" "{\"idToken\":\"mock_google_token_email=${OAUTH_EMAIL}&name=Google%20Evaluator&sub=${OAUTH_SUB}\",\"role\":\"ALUMNI\"}"
+check "Google OAuth sign-in -> 201" 201 "$STATUS"
+OAUTH_TOKEN=$(jq -r '.data.token' <<<"$BODY")
+
+# 6. Role Authorization on OAuth user (Slide 21: Google proves identity; app decides role & access)
+req GET /api/admin/stats "$OAUTH_TOKEN"
+check "OAuth user cannot access admin route -> 403" 403 "$STATUS"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
