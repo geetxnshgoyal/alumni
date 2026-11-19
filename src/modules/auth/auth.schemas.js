@@ -55,4 +55,25 @@ const changePassword = z
     path: ['newPassword'],
   });
 
-module.exports = { register, login, changePassword };
+const refresh = z.object({
+  refreshToken: z.string().optional(),
+});
+
+const googleAuth = z
+  .object({
+    idToken: z.string().optional(),
+    code: z.string().optional(),
+    role: z.enum(['ALUMNI', 'STUDENT']).optional().default('ALUMNI'),
+    deptId: z.coerce.number().int().positive().optional(),
+    enrollmentNo: z.string().max(30).optional(),
+    degree: z.string().max(80).optional(),
+    graduationYear: z.coerce.number().int().optional(),
+    currentSemester: z.coerce.number().int().optional(),
+    expectedGradYear: z.coerce.number().int().optional(),
+  })
+  .refine((data) => !!(data.idToken || data.code), {
+    message: 'Either idToken or authorization code is required',
+    path: ['idToken'],
+  });
+
+module.exports = { register, login, changePassword, refresh, googleAuth };

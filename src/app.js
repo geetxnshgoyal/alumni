@@ -3,6 +3,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const env = require('./config/env');
 const apiRoutes = require('./routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
@@ -19,7 +20,8 @@ app.use(
     },
   })
 );
-app.use(cors({ origin: env.corsOrigins.length ? env.corsOrigins : false }));
+app.use(cors({ origin: env.corsOrigins.length ? env.corsOrigins : true, credentials: true }));
+app.use(cookieParser());
 app.use(express.json({ limit: '100kb' }));
 if (env.NODE_ENV !== 'test') app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 

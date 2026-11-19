@@ -39,9 +39,8 @@ function updateNavigation() {
         </div>
       `;
 
-      $('#logout-btn')?.addEventListener('click', () => {
-        auth.clearSession();
-        window.location.hash = '#/auth';
+      $('#logout-btn')?.addEventListener('click', async () => {
+        await auth.logout();
         updateNavigation();
       });
     } else {

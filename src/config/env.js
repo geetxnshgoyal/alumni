@@ -13,6 +13,11 @@ const schema = z.object({
     .transform((v) => v === 'true'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  GOOGLE_CLIENT_ID: z.string().optional().default('test_google_client_id'),
+  GOOGLE_CLIENT_SECRET: z.string().optional().default('test_google_client_secret'),
+  GOOGLE_CALLBACK_URL: z.string().optional().default('http://localhost:3000/api/auth/oauth/google/callback'),
   CORS_ORIGIN: z.string().optional().default(''),
 });
 
