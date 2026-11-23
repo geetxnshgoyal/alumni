@@ -119,6 +119,19 @@ export async function renderHome(container) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
 
+          <a href="#/network" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Networking & Mentorship Hub</strong>
+                <span class="small muted">Manage connection requests, mentorship ties & direct alumni chat</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
           <a href="#/campaigns" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
             <div style="display:flex; align-items:center; gap: 14px;">
               <div style="width:40px; height:40px; border-radius:8px; background:var(--secondary-coral-light); color:var(--secondary-coral); display:grid; place-items:center;">

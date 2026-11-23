@@ -12,6 +12,7 @@ import { renderSurveys } from './pages/surveys.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderJobs } from './pages/jobs.js';
 import { renderEvents } from './pages/events.js';
+import { renderNetwork } from './pages/network.js';
 
 function updateNavigation() {
   const user = auth.getUser();
@@ -67,6 +68,10 @@ function updateNavigation() {
           <a href="#/directory" class="nav-item ${activePath === '#/directory' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span>Alumni Directory</span>
+          </a>
+          <a href="#/network" class="nav-item ${activePath === '#/network' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Network & Chat</span>
           </a>
           <a href="#/campaigns" class="nav-item ${activePath === '#/campaigns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
@@ -128,6 +133,10 @@ function updateNavigation() {
           <a href="#/directory" class="nav-item ${activePath === '#/directory' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             <span>Directory</span>
+          </a>
+          <a href="#/network" class="nav-item ${activePath === '#/network' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Networking Hub</span>
           </a>
           <a href="#/campaigns" class="nav-item ${activePath === '#/campaigns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
@@ -283,6 +292,9 @@ async function router() {
       break;
     case '#/directory':
       await renderDirectory(app);
+      break;
+    case '#/network':
+      await renderNetwork(app);
       break;
     case '#/campaigns':
       await renderCampaigns(app);
