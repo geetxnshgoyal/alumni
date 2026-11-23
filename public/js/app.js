@@ -10,6 +10,7 @@ import { renderCampaigns } from './pages/campaigns.js';
 import { renderStories } from './pages/stories.js';
 import { renderSurveys } from './pages/surveys.js';
 import { renderFeedback } from './pages/feedback.js';
+import { renderJobs } from './pages/jobs.js';
 
 function updateNavigation() {
   const user = auth.getUser();
@@ -70,6 +71,10 @@ function updateNavigation() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span>Giving & Campaigns</span>
           </a>
+          <a href="#/jobs" class="nav-item ${activePath === '#/jobs' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Jobs Portal</span>
+          </a>
           <a href="#/stories" class="nav-item ${activePath === '#/stories' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
             <span>Success Stories</span>
@@ -122,6 +127,10 @@ function updateNavigation() {
           <a href="#/campaigns" class="nav-item ${activePath === '#/campaigns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span>Giving & Campaigns</span>
+          </a>
+          <a href="#/jobs" class="nav-item ${activePath === '#/jobs' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Jobs Portal</span>
           </a>
           <a href="#/stories" class="nav-item ${activePath === '#/stories' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
@@ -249,7 +258,7 @@ async function router() {
   document.body.classList.toggle('page-auth', path === '#/auth');
 
   // Protect private routes
-  if (!auth.isAuthenticated() && !['#/', '#/auth', '#/directory', '#/campaigns', '#/stories', '#/surveys', '#/feedback'].includes(path)) {
+  if (!auth.isAuthenticated() && !['#/', '#/auth', '#/directory', '#/campaigns', '#/jobs', '#/stories', '#/surveys', '#/feedback'].includes(path)) {
     window.location.hash = '#/auth';
     return;
   }
@@ -268,6 +277,9 @@ async function router() {
       break;
     case '#/campaigns':
       await renderCampaigns(app);
+      break;
+    case '#/jobs':
+      await renderJobs(app);
       break;
     case '#/stories':
       await renderStories(app);

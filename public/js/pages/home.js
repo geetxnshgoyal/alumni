@@ -132,6 +132,19 @@ export async function renderHome(container) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
 
+          <a href="#/jobs" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Alumni & Student Job Portal</strong>
+                <span class="small muted">Discover vetted openings, internships, contracts & apply with your profile</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
           <a href="#/stories" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
             <div style="display:flex; align-items:center; gap: 14px;">
               <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:grid; place-items:center;">
