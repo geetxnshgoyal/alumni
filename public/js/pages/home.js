@@ -119,6 +119,19 @@ export async function renderHome(container) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
 
+          <a href="#/network" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Networking & Mentorship Hub</strong>
+                <span class="small muted">Manage connection requests, mentorship ties & direct alumni chat</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
           <a href="#/campaigns" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
             <div style="display:flex; align-items:center; gap: 14px;">
               <div style="width:40px; height:40px; border-radius:8px; background:var(--secondary-coral-light); color:var(--secondary-coral); display:grid; place-items:center;">
@@ -127,6 +140,32 @@ export async function renderHome(container) {
               <div>
                 <strong style="display:block; color:var(--text); font-size:15px;">Alumni Giving & Campaigns</strong>
                 <span class="small muted">Test-mode donations, progress tracking & official 80G tax receipts</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
+          <a href="#/jobs" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Alumni & Student Job Portal</strong>
+                <span class="small muted">Discover vetted openings, internships, contracts & apply with your profile</span>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+
+          <a href="#/events" class="card card-interactive" style="padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:var(--accent-gold-light); color:var(--functional-amber); display:grid; place-items:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div>
+                <strong style="display:block; color:var(--text); font-size:15px;">Events, Reunions & Workshops</strong>
+                <span class="small muted">Reserve seats for annual homecoming, technical webinars & join waitlists</span>
               </div>
             </div>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>

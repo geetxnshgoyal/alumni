@@ -10,6 +10,9 @@ import { renderCampaigns } from './pages/campaigns.js';
 import { renderStories } from './pages/stories.js';
 import { renderSurveys } from './pages/surveys.js';
 import { renderFeedback } from './pages/feedback.js';
+import { renderJobs } from './pages/jobs.js';
+import { renderEvents } from './pages/events.js';
+import { renderNetwork } from './pages/network.js';
 
 function updateNavigation() {
   const user = auth.getUser();
@@ -66,9 +69,21 @@ function updateNavigation() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span>Alumni Directory</span>
           </a>
+          <a href="#/network" class="nav-item ${activePath === '#/network' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Network & Chat</span>
+          </a>
           <a href="#/campaigns" class="nav-item ${activePath === '#/campaigns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span>Giving & Campaigns</span>
+          </a>
+          <a href="#/jobs" class="nav-item ${activePath === '#/jobs' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Jobs Portal</span>
+          </a>
+          <a href="#/events" class="nav-item ${activePath === '#/events' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Events & Reunions</span>
           </a>
           <a href="#/stories" class="nav-item ${activePath === '#/stories' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
@@ -119,9 +134,21 @@ function updateNavigation() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             <span>Directory</span>
           </a>
+          <a href="#/network" class="nav-item ${activePath === '#/network' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Networking Hub</span>
+          </a>
           <a href="#/campaigns" class="nav-item ${activePath === '#/campaigns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span>Giving & Campaigns</span>
+          </a>
+          <a href="#/jobs" class="nav-item ${activePath === '#/jobs' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Jobs Portal</span>
+          </a>
+          <a href="#/events" class="nav-item ${activePath === '#/events' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Events & Reunions</span>
           </a>
           <a href="#/stories" class="nav-item ${activePath === '#/stories' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
@@ -249,7 +276,7 @@ async function router() {
   document.body.classList.toggle('page-auth', path === '#/auth');
 
   // Protect private routes
-  if (!auth.isAuthenticated() && !['#/', '#/auth', '#/directory', '#/campaigns', '#/stories', '#/surveys', '#/feedback'].includes(path)) {
+  if (!auth.isAuthenticated() && !['#/', '#/auth', '#/directory', '#/campaigns', '#/jobs', '#/events', '#/stories', '#/surveys', '#/feedback'].includes(path)) {
     window.location.hash = '#/auth';
     return;
   }
@@ -266,8 +293,17 @@ async function router() {
     case '#/directory':
       await renderDirectory(app);
       break;
+    case '#/network':
+      await renderNetwork(app);
+      break;
     case '#/campaigns':
       await renderCampaigns(app);
+      break;
+    case '#/jobs':
+      await renderJobs(app);
+      break;
+    case '#/events':
+      await renderEvents(app);
       break;
     case '#/stories':
       await renderStories(app);

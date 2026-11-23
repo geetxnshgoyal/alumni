@@ -1,5 +1,5 @@
-import { api } from '../api.js';
-import { $, esc, avatar, loading } from '../ui.js';
+import { api, auth } from '../api.js';
+import { $, esc, avatar, loading, toast } from '../ui.js';
 
 export async function renderDirectory(container) {
   let query = { page: 1, limit: 12, q: '', deptId: '', graduationYear: '' };
@@ -57,6 +57,9 @@ export async function renderDirectory(container) {
     <div id="dir-results">
       ${loading('Loading alumni directory...')}
     </div>
+
+    <!-- Connect Modal Container -->
+    <div id="dir-modal-container"></div>
   `;
 
   // Parse URL query params if any (e.g. ?q=...)
@@ -86,6 +89,9 @@ export async function renderDirectory(container) {
 
   function renderResults(alumniList, pagination) {
     const el = container.querySelector('#dir-results');
+    const currentUser = auth.getUser();
+    const isAuth = auth.isAuthenticated();
+
     if (!alumniList || !alumniList.length) {
       el.innerHTML = `
         <div class="card" style="text-align: center; padding: 48px var(--space-4);">
@@ -150,17 +156,29 @@ export async function renderDirectory(container) {
 
             <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-subtle); display: flex; gap: 8px; justify-content: space-between; align-items: center;">
               <span class="small muted" style="font-size: 12px;">${esc(a.degree || 'B.E.')}</span>
-              ${
-                a.linkedinUrl
-                  ? `
-                <a href="${esc(a.linkedinUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary" style="height: 32px; font-size: 12px; gap: 4px;">
-                  LinkedIn
-                </a>
-              `
-                  : `
-                <button class="btn btn-sm btn-ghost" style="height: 32px; font-size: 12px;">View Bio</button>
-              `
-              }
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${
+                  isAuth && currentUser && currentUser.id !== a.userId
+                    ? `
+                  <button class="btn btn-sm btn-primary btn-connect" data-user-id="${a.userId}" data-name="${esc(a.fullName)}" style="height: 32px; font-size: 12px; gap: 4px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    Connect
+                  </button>
+                `
+                    : ''
+                }
+                ${
+                  a.linkedinUrl
+                    ? `
+                  <a href="${esc(a.linkedinUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary" style="height: 32px; font-size: 12px; gap: 4px;">
+                    LinkedIn
+                  </a>
+                `
+                    : `
+                  <button class="btn btn-sm btn-ghost" style="height: 32px; font-size: 12px;">View Bio</button>
+                `
+                }
+              </div>
             </div>
           </div>
         `)
@@ -180,6 +198,15 @@ export async function renderDirectory(container) {
       }
     `;
 
+    // Connect button click handlers
+    el.querySelectorAll('.btn-connect').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetUserId = Number(btn.getAttribute('data-user-id'));
+        const targetName = btn.getAttribute('data-name');
+        openConnectModal(targetUserId, targetName, btn);
+      });
+    });
+
     el.querySelector('#prev-page')?.addEventListener('click', () => {
       if (query.page > 1) {
         query.page--;
@@ -191,6 +218,86 @@ export async function renderDirectory(container) {
       if (pagination && query.page < pagination.totalPages) {
         query.page++;
         loadData();
+      }
+    });
+  }
+
+  function openConnectModal(receiverId, receiverName, sourceBtn) {
+    const modalContainer = container.querySelector('#dir-modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="modal-backdrop">
+        <div class="modal" style="max-width: 480px;">
+          <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px;">
+            <h3 style="margin:0; font-size:18px;">Connect with ${esc(receiverName)}</h3>
+            <button class="modal-close-btn icon-btn">&times;</button>
+          </div>
+          <form id="connect-request-form" style="padding-top: 16px;">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Connection Relationship</label>
+              <select id="connect-type" class="form-control" required>
+                <option value="NETWORK">General Networking</option>
+                <option value="MENTORSHIP">Mentorship Request</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Personal Note (Optional)</label>
+              <textarea id="connect-note" class="form-control" rows="3" maxlength="500" placeholder="Introduce yourself or mention why you'd like to connect..."></textarea>
+              <div class="small text-muted" style="font-size: 11px; margin-top: 4px;">Max 500 characters.</div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+              <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+              <button type="submit" id="submit-connect-btn" class="btn btn-primary">Send Request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    modalContainer.querySelectorAll('.modal-close-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+      });
+    });
+
+    const form = modalContainer.querySelector('#connect-request-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = modalContainer.querySelector('#submit-connect-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      const connectionType = modalContainer.querySelector('#connect-type').value;
+      const requestNote = modalContainer.querySelector('#connect-note').value.trim() || null;
+
+      try {
+        await api.post('/connections', {
+          receiverId,
+          connectionType,
+          requestNote,
+        });
+        toast(`Connection request sent to ${receiverName}!`, 'success');
+        modalContainer.innerHTML = '';
+        if (sourceBtn) {
+          sourceBtn.disabled = true;
+          sourceBtn.textContent = 'Requested';
+          sourceBtn.className = 'btn btn-sm btn-secondary';
+        }
+      } catch (err) {
+        if (err.message && err.message.includes('already exists')) {
+          toast('A connection request already exists between you and this member.', 'info');
+          modalContainer.innerHTML = '';
+          if (sourceBtn) {
+            sourceBtn.disabled = true;
+            sourceBtn.textContent = 'Pending';
+            sourceBtn.className = 'btn btn-sm btn-secondary';
+          }
+        } else {
+          toast(err.message, 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send Request';
+        }
       }
     });
   }
