@@ -154,6 +154,32 @@ Send `Authorization: Bearer <token>` for protected routes.
 | PATCH | `/api/admin/alumni/:id/verification` | admin | `VERIFIED` or `REJECTED` (notifies the alumni) |
 | PATCH | `/api/admin/users/:id/status` | admin | `ACTIVE` or `SUSPENDED` |
 | GET | `/api/admin/audit-logs` | admin | Security/audit trail (logins, verifications, ...) |
+| POST | `/api/connections` | logged in | Send connection/mentorship request (`receiverId, connectionType, requestNote`) |
+| GET | `/api/connections` | logged in | List connections and requests (`status, type, page, limit`) |
+| GET | `/api/connections/:id` | logged in | Get single connection details (participants or admin) |
+| PATCH | `/api/connections/:id/accept` | logged in | Accept connection request (receiver only) |
+| PATCH | `/api/connections/:id/reject` | logged in | Reject connection request (receiver only) |
+| POST | `/api/messages` | logged in | Send message to accepted connection (`connectionId, content`) |
+| GET | `/api/messages?connectionId=` | logged in | List messages chronologically and mark incoming as read |
+| POST | `/api/jobs` | alumni / admin | Create job posting (`title, companyName, location, jobType, description, applyBy`) |
+| GET | `/api/jobs` | public | List and search active job postings (`q, jobType, location, company, page, limit`) |
+| GET | `/api/jobs/:id` | public | View detailed job post |
+| PATCH | `/api/jobs/:id` | poster / admin | Update job posting |
+| PATCH | `/api/jobs/:id/close` | poster / admin | Close job post (logs to audit trail) |
+| POST | `/api/jobs/:id/apply` | logged in | Apply to job with optional `resumeUrl` and `coverNote` |
+| GET | `/api/applications/me` | logged in | List my submitted job applications |
+| GET | `/api/jobs/:id/applications` | poster / admin | List candidate applications for a job |
+| PATCH | `/api/applications/:id/status` | poster / admin | Update candidate application status (`SHORTLISTED, REJECTED, HIRED`) |
+| GET | `/api/events` | public | List events with filters (`q, type, mode, status, page, limit`) |
+| GET | `/api/events/:id` | public | View event details and current attendee/capacity status |
+| POST | `/api/events` | admin | Create event (`title, eventType, mode, venueOrLink, startAt, endAt, capacity, registrationDeadline`) |
+| PATCH | `/api/events/:id` | admin | Update event details |
+| PATCH | `/api/events/:id/cancel` | admin | Cancel event and notify confirmed/waitlisted attendees |
+| DELETE | `/api/events/:id` | admin | Delete event |
+| POST | `/api/events/:id/register` | logged in | RSVP for event (`REGISTERED` or placed on `WAITLISTED` if full) |
+| DELETE | `/api/events/:id/register` | logged in | Cancel registration (automatically promotes next waitlisted attendee) |
+| GET | `/api/events/registrations/me` | logged in | List my registered and waitlisted events |
+| GET | `/api/events/:id/registrations` | admin | View attendee roster and waitlist for an event |
 
 Status codes used: `200` OK, `201` created, `204` deleted, `400` validation failed, `401` not logged in or bad token,
 `403` wrong role or account locked/suspended, `404` not found, `409` duplicate or still referenced, `413` body too large, `429` rate limited.
