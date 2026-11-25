@@ -91,6 +91,8 @@ GitHub Actions runs the same tests against a fresh PostgreSQL on every pull requ
 | `DATABASE_SSL` | no | `true` for hosted databases that require SSL (Neon, Supabase, Render external URL) |
 | `JWT_SECRET` | yes | At least 16 characters. Generate with `openssl rand -hex 32` |
 | `JWT_EXPIRES_IN` | no | Token lifetime, default `7d` |
+| `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` | no | Access / refresh token lifetimes, default `15m` / `7d` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` | for Google sign-in | From Google Cloud Console. Without them, Google sign-in does not work |
 | `CORS_ORIGIN` | no | Comma-separated origins allowed to call the API from another domain |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | First admin account created by `npm run seed` |
 
@@ -180,6 +182,36 @@ Send `Authorization: Bearer <token>` for protected routes.
 | DELETE | `/api/events/:id/register` | logged in | Cancel registration (automatically promotes next waitlisted attendee) |
 | GET | `/api/events/registrations/me` | logged in | List my registered and waitlisted events |
 | GET | `/api/events/:id/registrations` | admin | View attendee roster and waitlist for an event |
+| POST | `/api/auth/refresh` | refresh token | New access token; the refresh token (cookie or body) is rotated, and reuse of an old one revokes the session |
+| POST | `/api/auth/logout` | public | Revoke the refresh token |
+| POST | `/api/auth/oauth/google` | public | Sign in with a Google ID token or auth code |
+| GET | `/api/auth/oauth/google`, `/callback` | public | Google OAuth redirect flow |
+| GET | `/api/campaigns` | public | List campaigns with amount raised vs goal |
+| GET | `/api/campaigns/:id` | public | Campaign detail |
+| POST | `/api/campaigns` | admin | Create campaign |
+| PATCH | `/api/campaigns/:id`, `/:id/close` | admin | Update or close campaign |
+| POST | `/api/donations` | logged in | Start a donation: creates a test-mode gateway order |
+| POST | `/api/donations/verify` | logged in | Verify payment signature; marks the donation SUCCESS and issues a receipt |
+| POST | `/api/donations/fail` | logged in | Record a failed payment |
+| POST | `/api/donations/webhook` | gateway | Payment gateway webhook (signature-checked, idempotent) |
+| GET | `/api/donations/my` | logged in | My donation history |
+| GET | `/api/donations/campaign/:id` | public | Donations to a campaign |
+| GET | `/api/donations/:id`, `/:id/receipt` | logged in | Donation detail and receipt |
+| GET | `/api/stories` | public | Approved success stories |
+| GET | `/api/stories/my`, `/api/stories/:id` | logged in / public | My stories; one story |
+| POST | `/api/stories` | alumni, admin | Submit a story for review |
+| PATCH / DELETE | `/api/stories/:id` | author | Edit or delete my story |
+| PATCH | `/api/stories/:id/review` | admin | Approve or reject (notifies the author) |
+| GET | `/api/surveys`, `/api/surveys/:id` | public | List surveys; survey with questions |
+| POST | `/api/surveys` | admin | Create survey with questions and options |
+| PATCH | `/api/surveys/:id/status` | admin | Open or close a survey |
+| POST | `/api/surveys/:id/responses` | logged in | Respond (once per user; required questions enforced) |
+| GET | `/api/surveys/:id/my-response` | logged in | My response |
+| GET | `/api/surveys/:id/results` | admin | Aggregated results per question |
+| POST | `/api/feedback` | logged in | Submit feedback |
+| GET | `/api/feedback/my`, `/api/feedback/:id` | logged in | My feedback; one item |
+| GET | `/api/feedback` | admin | All feedback |
+| PATCH | `/api/feedback/:id` | admin | Reply and set status (OPEN → IN_REVIEW → CLOSED) |
 
 Status codes used: `200` OK, `201` created, `204` deleted, `400` validation failed, `401` not logged in or bad token,
 `403` wrong role or account locked/suspended, `404` not found, `409` duplicate or still referenced, `413` body too large, `429` rate limited.
@@ -227,8 +259,8 @@ works too: set `DATABASE_URL` to its connection string and `DATABASE_SSL=true`.
 
 | Item | Evidence |
 |---|---|
-| Hosted URL | |
-| Evaluated commit | |
-| `/api/health` reachable | |
-| Core flow (register → admin verifies → appears in directory) | |
-| Persistence (data survives a redeploy/restart) | |
+| Hosted URL | https://alumni-ep6w.onrender.com (Render web service + Render PostgreSQL) |
+| Evaluated commit | `main`, auto-deployed by Render. Verified on 25 Nov 2026 with `main` at `e4d8221` |
+| `/api/health` reachable | Yes, 25 Nov 2026: `{"status":"ok","database":"connected"}` |
+| Core flow (register → admin verifies → appears in directory) | Yes, 25 Nov 2026: `npm run demo -- https://alumni-ep6w.onrender.com` → 59 passed, 0 failed (includes L2, L7 and L6) |
+| Persistence (data survives a redeploy/restart) | Yes: seed data (departments, admin) created 16 Nov 2026 is still present on 25 Nov after several redeploys |
