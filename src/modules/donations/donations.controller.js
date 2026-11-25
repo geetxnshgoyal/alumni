@@ -1,6 +1,7 @@
 const gateway = require('./payment-gateway.service');
 const donations = require('./donations.model');
 const ApiError = require('../../utils/ApiError');
+const audit = require('../audit/audit.model');
 
 async function createOrder(req, res, next) {
   try {
@@ -54,6 +55,10 @@ async function verifyPayment(req, res, next) {
     });
 
     if (!isValid) {
+      await audit.log({
+        actorId: req.user.id, action: 'DONATION_VERIFY', entityName: 'donation', entityId: donationId,
+        outcome: 'FAILURE', errorCode: 'BAD_SIGNATURE', ip: req.ip,
+      });
       throw ApiError.badRequest('Invalid payment signature verification failed');
     }
 
@@ -64,6 +69,7 @@ async function verifyPayment(req, res, next) {
       gatewayPaymentId,
       signature,
     });
+    await audit.log({ actorId: req.user.id, action: 'DONATION_SUCCESS', entityName: 'donation', entityId: donationId, ip: req.ip });
 
     res.json({
       data: settled,
@@ -83,6 +89,7 @@ async function recordFailure(req, res, next) {
       gatewayOrderId,
       reason,
     });
+    await audit.log({ actorId: req.user.id, action: 'DONATION_FAILED', entityName: 'donation', entityId: donationId, outcome: 'FAILURE', ip: req.ip });
 
     res.json({
       data: failed,

@@ -38,6 +38,8 @@ describe('Events API', () => {
       expect(res.body.data.eventId).toBeDefined();
       expect(res.body.data.title).toBe('Annual Alumni Gala 2026');
       expect(res.body.data.eventType).toBe('REUNION');
+      const logged = (await pool.query("SELECT action, outcome, error_code FROM audit_log WHERE action = $1", ['EVENT_CREATE'])).rows;
+      expect(logged).toHaveLength(1);
       expect(res.body.data.mode).toBe('OFFLINE');
       expect(res.body.data.status).toBe('DRAFT');
       expect(res.body.data.capacity).toBe(150);
