@@ -3,6 +3,7 @@ const { paginationMeta } = require('../../utils/pagination');
 const { withTransaction } = require('../../db/pool');
 const events = require('./events.model');
 const notifications = require('../notifications/notifications.model');
+const audit = require('../audit/audit.model');
 
 // Valid status transitions
 const ALLOWED_TRANSITIONS = {
@@ -18,6 +19,7 @@ async function create(req, res) {
     createdBy: req.user.id,
     ...req.valid.body,
   });
+  await audit.log({ actorId: req.user.id, action: 'EVENT_CREATE', entityName: 'event', entityId: event.eventId, ip: req.ip });
   res.status(201).json({ data: event });
 }
 
@@ -84,6 +86,7 @@ async function update(req, res) {
   }
 
   const updated = await events.update(id, req.valid.body);
+  await audit.log({ actorId: req.user.id, action: 'EVENT_UPDATE', entityName: 'event', entityId: id, ip: req.ip });
   res.json({ data: updated });
 }
 
@@ -96,6 +99,7 @@ async function remove(req, res) {
   }
 
   await events.deleteEvent(id);
+  await audit.log({ actorId: req.user.id, action: 'EVENT_DELETE', entityName: 'event', entityId: id, ip: req.ip });
   res.json({ data: { message: 'Event deleted successfully' } });
 }
 
@@ -119,6 +123,7 @@ async function cancelEvent(req, res) {
   }
 
   const updated = await events.update(id, { status: 'CANCELLED' });
+  await audit.log({ actorId: req.user.id, action: 'EVENT_CANCEL', entityName: 'event', entityId: id, ip: req.ip });
   res.json({ data: updated });
 }
 

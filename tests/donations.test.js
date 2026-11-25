@@ -125,6 +125,8 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(verifyRes.body.data.transactionStatus).toBe('SUCCESS');
       expect(verifyRes.body.data.gatewayPaymentId).toBe(paymentId);
       expect(verifyRes.body.data.receiptNo).toMatch(/^REC-2026-\d{6}$/);
+      const logged = (await pool.query("SELECT action, outcome, error_code FROM audit_log WHERE action = $1", ['DONATION_SUCCESS'])).rows;
+      expect(logged).toHaveLength(1);
 
       // 3. Campaign amount raised should now reflect this donation
       const campRes = await api().get(`/api/campaigns/${campaign.campaignId}`);
@@ -155,6 +157,8 @@ describe('Donations & Payment Gateway API (#C2)', () => {
         });
 
       expect(verifyRes.status).toBe(400);
+      const logged = (await pool.query("SELECT action, outcome, error_code FROM audit_log WHERE action = $1", ['DONATION_VERIFY'])).rows;
+      expect(logged).toEqual([{ action: 'DONATION_VERIFY', outcome: 'FAILURE', error_code: 'BAD_SIGNATURE' }]);
 
       // Verify donation remained INITIATED
       const checkRes = await api()

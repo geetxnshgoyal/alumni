@@ -1,6 +1,7 @@
 const ApiError = require('../../utils/ApiError');
 const { paginationMeta } = require('../../utils/pagination');
 const campaigns = require('./campaigns.model');
+const audit = require('../audit/audit.model');
 
 // POST /api/campaigns (admin only)
 async function create(req, res) {
@@ -8,6 +9,7 @@ async function create(req, res) {
     createdBy: req.user.id,
     ...req.valid.body,
   });
+  await audit.log({ actorId: req.user.id, action: 'CAMPAIGN_CREATE', entityName: 'campaign', entityId: campaign.campaignId, ip: req.ip });
   res.status(201).json({ data: campaign });
 }
 
@@ -36,6 +38,7 @@ async function update(req, res) {
     throw ApiError.notFound('Campaign not found');
   }
   const updated = await campaigns.update(req.valid.params.id, req.valid.body);
+  await audit.log({ actorId: req.user.id, action: 'CAMPAIGN_UPDATE', entityName: 'campaign', entityId: req.valid.params.id, ip: req.ip });
   res.json({ data: updated });
 }
 
@@ -46,6 +49,7 @@ async function close(req, res) {
     throw ApiError.notFound('Campaign not found');
   }
   const closed = await campaigns.updateStatus(req.valid.params.id, 'CLOSED');
+  await audit.log({ actorId: req.user.id, action: 'CAMPAIGN_CLOSE', entityName: 'campaign', entityId: req.valid.params.id, ip: req.ip });
   res.json({ data: closed });
 }
 

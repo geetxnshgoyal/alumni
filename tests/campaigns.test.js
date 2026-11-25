@@ -28,6 +28,8 @@ describe('Campaigns API', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.data.title).toBe('Campus Library Upgrade');
+      const logged = (await pool.query("SELECT action, outcome, error_code FROM audit_log WHERE action = $1", ['CAMPAIGN_CREATE'])).rows;
+      expect(logged).toHaveLength(1);
       expect(res.body.data.goalAmount).toBe(100000);
       expect(res.body.data.status).toBe('ACTIVE');
     });
