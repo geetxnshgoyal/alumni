@@ -12,28 +12,28 @@ Lead items L1–L9 can be shown live with `npm run demo` (see README → Checkpo
 
 | # | Item | Weight | Acceptance test (what the evaluator sees) | Status |
 |---|---|---|---|---|
-| L1 | Project structure, config, central error handling, validation | 5 | Invalid JSON → 400; unknown route → 404 JSON; missing env var → server refuses to start with a clear message | ☐ |
-| L2 | Registration (alumni & student) | 5 | `POST /api/auth/register` → 201 + token; duplicate email/enrollment → 409; bad input → 400 with field errors; user + profile saved in one transaction | ☐ |
-| L3 | Login with JWT, password hashing, lockout | 5 | Correct login → 200 + token; wrong password → 401; 5 failures → account locked (403); hash never in responses | ☐ |
-| L4 | Role-based authorisation (ADMIN / ALUMNI / STUDENT) | 3 | No token → 401; alumni calling admin route → 403; admin → 200 | ☐ |
-| L5 | Profile view/update with skills & interests | 3 | `PATCH /api/profile/me` updates DB; role-specific fields enforced; skills de-duplicated | ☐ |
-| L6 | Alumni directory search & filters | 5 | Filter by year, department, industry, city, skill, text search; pagination; only verified alumni visible | ☐ |
-| L7 | Admin verification, account status, departments | 3 | Admin verifies pending alumni → appears in directory and receives a notification; suspend blocks login | ☐ |
-| L8 | Notifications + audit log (used by all modules) | 2 | Notification list/mark read; failed logins and admin actions appear in audit log | ☐ |
-| L9 | Deployment + README | 2.4 | Hosted URL `/api/health` shows database connected; data persists after restart | ☐ |
-| | **Subtotal** | **33.4** | | |
+| L1 | Project structure, config, central error handling, validation | 5 | Invalid JSON → 400; unknown route → 404 JSON; missing env var → server refuses to start with a clear message | ☑ 9 Nov 2026 (`npm run demo` & app.test.js) |
+| L2 | Registration (alumni & student) | 5 | `POST /api/auth/register` → 201 + token; duplicate email/enrollment → 409; bad input → 400 with field errors; user + profile saved in one transaction | ☑ 9 Nov 2026 (`npm run demo` & auth.test.js) |
+| L3 | Login with JWT, password hashing, lockout | 5 | Correct login → 200 + token; wrong password → 401; 5 failures → account locked (403); hash never in responses | ☑ 9 Nov 2026 (`npm run demo` & auth.test.js) |
+| L4 | Role-based authorisation (ADMIN / ALUMNI / STUDENT) | 3 | No token → 401; alumni calling admin route → 403; admin → 200 | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js) |
+| L5 | Profile view/update with skills & interests | 3 | `PATCH /api/profile/me` updates DB; role-specific fields enforced; skills de-duplicated | ☑ 9 Nov 2026 (`npm run demo` & profile.test.js) |
+| L6 | Alumni directory search & filters | 5 | Filter by year, department, industry, city, skill, text search; pagination; only verified alumni visible | ☑ 9 Nov 2026 (`npm run demo` & alumni.test.js) |
+| L7 | Admin verification, account status, departments | 3 | Admin verifies pending alumni → appears in directory and receives a notification; suspend blocks login | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js) |
+| L8 | Notifications + audit log (used by all modules) | 2 | Notification list/mark read; failed logins and admin actions appear in audit log | ☑ 9 Nov 2026 (`npm run demo` & audit tests) |
+| L9 | Deployment + README | 2.4 | Hosted URL `/api/health` shows database connected; data persists after restart | ☑ 23 Nov 2026 (README.md & deploy record) |
+| | **Subtotal** | **33.4** | | **33.4% Demonstrated** |
 
 ## Member B: Bhavesh Sharma (33.3%) - networking hub, job portal, events
 
 | # | Item | Weight | Acceptance test | Status |
 |---|---|---|---|---|
-| B1 | Connections: send / accept / reject (NETWORK or MENTORSHIP) | 6.3 | Cannot connect to self; duplicate request → 409; only receiver can accept | ☐ |
-| B2 | Messages between connected users | 5 | Only accepted connections can message; read_at set when read | ☐ |
-| B3 | Job posts: create, list with search/filters, update/close | 6 | Only the poster (or admin) can edit/close; filters by type & location | ☐ |
-| B4 | Job applications + status changes | 5 | Apply once per job (409 on repeat); poster changes status → applicant notified | ☐ |
-| B5 | Events: create (admin), list, update, cancel | 5 | Validation of dates; only admin manages; status flow DRAFT → OPEN → COMPLETED/CANCELLED | ☐ |
-| B6 | Event registration with capacity and waitlist | 6 | Full event → WAITLISTED; cancellation promotes next waitlisted; after deadline → 400 | ☐ |
-| | **Subtotal** | **33.3** | | |
+| B1 | Connections: send / accept / reject (NETWORK or MENTORSHIP) | 6.3 | Cannot connect to self; duplicate request → 409; only receiver can accept | ☑ 9 Nov 2026 (connections.test.js, PR #30, #31, #46) |
+| B2 | Messages between connected users | 5 | Only accepted connections can message; read_at set when read | ☑ 11 Nov 2026 (messages.test.js, PR #32, #33, #46) |
+| B3 | Job posts: create, list with search/filters, update/close | 6 | Only the poster (or admin) can edit/close; filters by type & location | ☑ 16 Nov 2026 (jobs.test.js, PR #35, #36, #38, #44) |
+| B4 | Job applications + status changes | 5 | Apply once per job (409 on repeat); poster changes status → applicant notified | ☑ 18 Nov 2026 (applications.test.js, PR #40, #44) |
+| B5 | Events: create (admin), list, update, cancel | 5 | Validation of dates; only admin manages; status flow DRAFT → OPEN → COMPLETED/CANCELLED | ☑ 20 Nov 2026 (events.test.js, PR #43, #45) |
+| B6 | Event registration with capacity and waitlist | 6 | Full event → WAITLISTED; cancellation promotes next waitlisted; after deadline → 400 | ☑ 21 Nov 2026 (events.test.js, PR #43, #45) |
+| | **Subtotal** | **33.3** | | **33.3% Demonstrated** |
 
 ## Member C: Ravi Sharma (33.3%) - donations, success stories, feedback & surveys
 
