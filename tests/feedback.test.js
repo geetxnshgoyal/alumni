@@ -109,6 +109,22 @@ describe('Feedback and Survey Results Analytics (#C6)', () => {
       expect(closeRes.body.data.status).toBe('CLOSED');
     });
 
+    it('rejects skipped or backward status changes with 400', async () => {
+      const subRes = await api()
+        .post('/api/feedback')
+        .set('Authorization', `Bearer ${alumni.token}`)
+        .send({ category: 'GENERAL', message: 'Please add a dark mode to the portal' });
+      const url = `/api/feedback/${subRes.body.data.feedbackId}`;
+      const patch = (body) => api().patch(url).set('Authorization', `Bearer ${admin.token}`).send(body);
+
+      expect((await patch({ status: 'CLOSED' })).status).toBe(400); // OPEN -> CLOSED skips review
+      expect((await patch({ status: 'IN_REVIEW' })).status).toBe(200);
+      expect((await patch({ status: 'IN_REVIEW', adminResponse: 'Still looking' })).status).toBe(200);
+      expect((await patch({ status: 'OPEN' })).status).toBe(400); // backward
+      expect((await patch({ status: 'CLOSED' })).status).toBe(200);
+      expect((await patch({ status: 'IN_REVIEW' })).status).toBe(400); // CLOSED is final
+    });
+
     it('rejects status update from non-admin with 403', async () => {
       const subRes = await api()
         .post('/api/feedback')
