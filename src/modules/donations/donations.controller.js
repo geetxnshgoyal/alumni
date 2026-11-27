@@ -81,9 +81,41 @@ async function verifyPayment(req, res, next) {
   }
 }
 
+// Test-mode checkout: plays the gateway's hosted checkout page, which in a real integration
+// (e.g. Razorpay Checkout) returns paymentId + signature to the browser after the user pays.
+// shortcut: always on because the gateway is a test-mode simulator; remove when a live gateway is wired in.
+async function testCheckout(req, res, next) {
+  try {
+    const donation = await donations.findById(req.valid.params.id);
+    if (!donation || donation.donorId !== req.user.id) {
+      throw ApiError.notFound('Donation record not found');
+    }
+    if (donation.donationStatus !== 'INITIATED') {
+      throw ApiError.conflict(`Donation is already ${donation.donationStatus}`);
+    }
+
+    const gatewayPaymentId = gateway.generateTestPaymentId();
+    res.json({
+      data: {
+        donationId: donation.donationId,
+        gatewayOrderId: donation.gatewayOrderId,
+        gatewayPaymentId,
+        signature: gateway.generateSignature({ orderId: donation.gatewayOrderId, paymentId: gatewayPaymentId }),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function recordFailure(req, res, next) {
   try {
     const { donationId, gatewayOrderId, reason } = req.valid?.body || req.body;
+
+    const existing = await donations.findById(donationId);
+    if (!existing || (existing.donorId !== req.user.id && req.user.role !== 'ADMIN')) {
+      throw ApiError.notFound('Donation record not found');
+    }
 
     const failed = await donations.recordPaymentFailure({
       donationId,
@@ -180,11 +212,9 @@ async function handleWebhook(req, res, next) {
     const signature = req.get('x-razorpay-signature') || req.get('x-gateway-signature') || req.body?.signature;
     const rawPayload = req.body;
 
-    if (signature) {
-      const isValid = gateway.verifyWebhookSignature(rawPayload, signature);
-      if (!isValid) {
-        throw ApiError.badRequest('Invalid webhook signature verification failed');
-      }
+    // Unsigned webhooks are rejected: anyone can call this URL, only the gateway knows the secret.
+    if (!signature || !gateway.verifyWebhookSignature(rawPayload, signature)) {
+      throw ApiError.badRequest('Invalid or missing webhook signature');
     }
 
     const event = req.body.event || 'payment.captured';
@@ -320,6 +350,7 @@ module.exports = {
   createOrder,
   verifyPayment,
   recordFailure,
+  testCheckout,
   getById,
   getReceipt,
   listMyDonations,
