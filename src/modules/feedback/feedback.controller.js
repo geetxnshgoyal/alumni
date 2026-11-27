@@ -4,6 +4,9 @@ const audit = require('../audit/audit.model');
 const ApiError = require('../../utils/ApiError');
 const { paginationMeta } = require('../../utils/pagination');
 
+// Feedback lifecycle: OPEN -> IN_REVIEW -> CLOSED, one step at a time.
+const NEXT_STATUS = { OPEN: 'IN_REVIEW', IN_REVIEW: 'CLOSED' };
+
 async function submitFeedback(req, res, next) {
   try {
     const userId = req.user.id || req.user.userId;
@@ -106,6 +109,11 @@ async function updateFeedback(req, res, next) {
     const existing = await feedback.findFeedbackById(feedbackId);
     if (!existing) {
       throw new ApiError(404, 'Feedback item not found');
+    }
+
+    // Same status is allowed so an admin can add a reply without moving the item.
+    if (status !== existing.status && NEXT_STATUS[existing.status] !== status) {
+      throw ApiError.badRequest(`Feedback cannot move from ${existing.status} to ${status}`);
     }
 
     const updated = await feedback.updateFeedback(feedbackId, {
