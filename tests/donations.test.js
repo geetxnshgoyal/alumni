@@ -437,4 +437,56 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(res.status).toBe(403);
     });
   });
+
+  describe('GET /api/donations/campaign/:id/top-donors (Leaderboard with window functions)', () => {
+    let alum3;
+
+    beforeEach(async () => {
+      alum3 = await createUser({ role: 'STUDENT', fullName: 'Small Donor', deptId: await createDepartment('ME', 'Mechanical') });
+      // alum1 gives 3000 + 2000, alum2 gives 5000 anonymously (tie), alum3 gives 1000.
+      // The FAILED and INITIATED rows must not count.
+      await pool.query(
+        `INSERT INTO donation (campaign_id, donor_id, amount, is_anonymous, donation_status) VALUES
+           ($1, $2, 3000, false, 'SUCCESS'), ($1, $2, 2000, false, 'SUCCESS'),
+           ($1, $3, 5000, true,  'SUCCESS'), ($1, $4, 1000, false, 'SUCCESS'),
+           ($1, $4, 99999, false, 'FAILED'), ($1, $4, 88888, false, 'INITIATED')`,
+        [campaign.campaignId, alum1.id, alum2.id, alum3.id]
+      );
+    });
+
+    it('ranks donors by total SUCCESS amount, ties share a rank, with share of total', async () => {
+      const res = await api().get(`/api/donations/campaign/${campaign.campaignId}/top-donors`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.map((d) => d.rank)).toEqual([1, 1, 3]);
+      expect(res.body.data.map((d) => d.totalAmount)).toEqual([5000, 5000, 1000]);
+      expect(res.body.data.map((d) => d.sharePercent)).toEqual([45.5, 45.5, 9.1]);
+      const ravi = res.body.data.find((d) => d.donorName === 'Ravi Donor');
+      expect(ravi.donationCount).toBe(2);
+    });
+
+    it('masks anonymous donors publicly but not for admin or the donor themself', async () => {
+      const names = async (token) => {
+        const req = api().get(`/api/donations/campaign/${campaign.campaignId}/top-donors`);
+        const res = token ? await req.set(auth(token)) : await req;
+        return res.body.data.map((d) => d.donorName);
+      };
+
+      expect(await names()).toContain('Anonymous Donor');
+      expect(await names()).not.toContain('Anonymous Donor Alum');
+      expect(await names(admin.token)).toContain('Anonymous Donor Alum');
+      expect(await names(alum2.token)).toContain('Anonymous Donor Alum');
+      expect(await names(alum1.token)).not.toContain('Anonymous Donor Alum');
+    });
+
+    it('respects limit, rejects invalid limit with 400 and unknown campaign with 404', async () => {
+      const url = `/api/donations/campaign/${campaign.campaignId}/top-donors`;
+      const one = await api().get(`${url}?limit=1`);
+      expect(one.status).toBe(200);
+      expect(one.body.data).toHaveLength(1);
+
+      expect((await api().get(`${url}?limit=50`)).status).toBe(400);
+      expect((await api().get('/api/donations/campaign/999999/top-donors')).status).toBe(404);
+    });
+  });
 });
