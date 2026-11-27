@@ -12,15 +12,15 @@ Lead items L1–L9 can be shown live with `npm run demo` (see README → Checkpo
 
 | # | Item | Weight | Acceptance test (what the evaluator sees) | Status |
 |---|---|---|---|---|
-| L1 | Project structure, config, central error handling, validation | 5 | Invalid JSON → 400; unknown route → 404 JSON; missing env var → server refuses to start with a clear message | ☑ 9 Nov 2026 (`npm run demo` & app.test.js) |
-| L2 | Registration (alumni & student) | 5 | `POST /api/auth/register` → 201 + token; duplicate email/enrollment → 409; bad input → 400 with field errors; user + profile saved in one transaction | ☑ 9 Nov 2026 (`npm run demo` & auth.test.js) |
-| L3 | Login with JWT, password hashing, lockout | 5 | Correct login → 200 + token; wrong password → 401; 5 failures → account locked (403); hash never in responses | ☑ 9 Nov 2026 (`npm run demo` & auth.test.js) |
-| L4 | Role-based authorisation (ADMIN / ALUMNI / STUDENT) | 3 | No token → 401; alumni calling admin route → 403; admin → 200 | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js) |
-| L5 | Profile view/update with skills & interests | 3 | `PATCH /api/profile/me` updates DB; role-specific fields enforced; skills de-duplicated | ☑ 9 Nov 2026 (`npm run demo` & profile.test.js) |
-| L6 | Alumni directory search & filters | 5 | Filter by year, department, industry, city, skill, text search; pagination; only verified alumni visible | ☑ 9 Nov 2026 (`npm run demo` & alumni.test.js) |
-| L7 | Admin verification, account status, departments | 3 | Admin verifies pending alumni → appears in directory and receives a notification; suspend blocks login | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js) |
-| L8 | Notifications + audit log (used by all modules) | 2 | Notification list/mark read; failed logins and admin actions appear in audit log | ☑ 9 Nov 2026 (`npm run demo` & audit tests) |
-| L9 | Deployment + README | 2.4 | Hosted URL `/api/health` shows database connected; data persists after restart | ☑ 23 Nov 2026 (README.md & deploy record) |
+| L1 | Project structure, config, central error handling, validation | 5 | Invalid JSON → 400; unknown route → 404 JSON; missing env var → server refuses to start with a clear message | ☑ 9 Nov 2026 (`npm run demo` & app.test.js; core `c6a103c`, PR #24, #27 CI) |
+| L2 | Registration (alumni & student) | 5 | `POST /api/auth/register` → 201 + token; duplicate email/enrollment → 409; bad input → 400 with field errors; user + profile saved in one transaction | ☑ 9 Nov 2026 (`npm run demo` & auth.test.js; core `c6a103c`) |
+| L3 | Login with JWT, password hashing, lockout | 5 | Correct login → 200 + token; wrong password → 401; 5 failures → account locked (403); hash never in responses | ☑ 9 Nov 2026 (`npm run demo` & auth.test.js, oauth_refresh.test.js; core `c6a103c`, PR #55) |
+| L4 | Role-based authorisation (ADMIN / ALUMNI / STUDENT) | 3 | No token → 401; alumni calling admin route → 403; admin → 200 | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js; core `c6a103c`) |
+| L5 | Profile view/update with skills & interests | 3 | `PATCH /api/profile/me` updates DB; role-specific fields enforced; skills de-duplicated | ☑ 9 Nov 2026 (`npm run demo` & profile.test.js; core `c6a103c`) |
+| L6 | Alumni directory search & filters | 5 | Filter by year, department, industry, city, skill, text search; pagination; only verified alumni visible | ☑ 9 Nov 2026 (`npm run demo` & alumni.test.js; core `c6a103c`, PR #37) |
+| L7 | Admin verification, account status, departments | 3 | Admin verifies pending alumni → appears in directory and receives a notification; suspend blocks login | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js; core `c6a103c`, PR #41) |
+| L8 | Notifications + audit log (used by all modules) | 2 | Notification list/mark read; failed logins and admin actions appear in audit log | ☑ 9 Nov 2026 (`npm run demo` & admin.test.js + audit assertions; core `c6a103c`, PR #37, #50) |
+| L9 | Deployment + README | 2.4 | Hosted URL `/api/health` shows database connected; data persists after restart | ☑ 23 Nov 2026 (README.md & deploy record, PR #49; live demo 59/59 on 25 Nov) |
 | | **Subtotal** | **33.4** | | **33.4% Demonstrated** |
 
 ## Member B: Bhavesh Sharma (33.3%) - networking hub, job portal, events
@@ -39,7 +39,7 @@ Lead items L1–L9 can be shown live with `npm run demo` (see README → Checkpo
 
 | # | Item | Weight | Acceptance test | Status |
 |---|---|---|---|---|
-| C1 | Campaigns: create (admin), list with progress (raised vs goal) | 5.3 | Amount raised = sum of SUCCESS donations only | ☑ 9 Nov 2026 (campaigns.test.js & PR #24) |
+| C1 | Campaigns: create (admin), list with progress (raised vs goal) | 5.3 | Amount raised = sum of SUCCESS donations only | ☑ 9 Nov 2026 (campaigns.test.js & PR #2, #51) |
 | C2 | Donations with payment gateway in **test mode** + transactions | 7 | Order created → payment verified (signature check) → donation SUCCESS; failed payment recorded | ☑ 16 Nov 2026 (donations.test.js & PR #26) |
 | C3 | Donation receipts + donor history | 4 | Unique receipt number generated once per successful donation | ☑ 16 Nov 2026 (donations.test.js & PR #29) |
 | C4 | Success stories: submit, admin review, publish | 5 | Only APPROVED stories are public; author notified on review | ☑ 18 Nov 2026 (stories.test.js & stories.js) |
