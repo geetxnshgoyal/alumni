@@ -32,13 +32,11 @@ function getGoogleAuthUrl({ state, redirectUri = env.GOOGLE_CALLBACK_URL }) {
  * Supports test mode for offline development, CI/CD, and demo evaluations.
  */
 async function verifyGoogleIdentity({ idToken, code }) {
-  // 1. Support Test / Simulation Mode for offline grading and CI test suites
-  if (
-    env.NODE_ENV === 'test' ||
-    idToken?.startsWith('mock_google_token_') ||
-    code?.startsWith('test_code_') ||
-    process.env.MOCK_OAUTH === 'true'
-  ) {
+  // 1. Simulation mode for tests and local demos only. It trusts whatever email the token names,
+  // so it must be opt-in and can never run in production (that would let anyone log in as anyone).
+  const mockAllowed =
+    env.NODE_ENV !== 'production' && (env.NODE_ENV === 'test' || process.env.MOCK_OAUTH === 'true');
+  if (mockAllowed) {
     const rawSubject = idToken || code || 'test_sub_default';
     const emailMatch = rawSubject.match(/email=([^&;]+)/);
     const nameMatch = rawSubject.match(/name=([^&;]+)/);
@@ -101,7 +99,7 @@ async function verifyGoogleIdentity({ idToken, code }) {
 
     const payload = await tokenInfoRes.json();
 
-    if (payload.aud !== env.GOOGLE_CLIENT_ID && env.NODE_ENV === 'production') {
+    if (payload.aud !== env.GOOGLE_CLIENT_ID) {
       throw new Error('Google token audience does not match this application client ID');
     }
 

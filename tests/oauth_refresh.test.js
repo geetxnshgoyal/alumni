@@ -235,5 +235,23 @@ describe('Lecture 16: Modern Authentication Architectures (Access + Refresh Toke
       expect(res.body.data.url).toContain('state=custom_csrf_state');
       expect(res.body.data.url).toContain('openid');
     });
+
+    it('rejects simulated Google tokens in production (no login as any email)', async () => {
+      const env = require('../src/config/env');
+      const oauth = require('../src/modules/auth/oauth.service');
+      const realEnv = env.NODE_ENV;
+      const realFetch = global.fetch;
+      env.NODE_ENV = 'production';
+      global.fetch = jest.fn().mockResolvedValue({ ok: false }); // Google rejects the fake token
+      try {
+        await expect(
+          oauth.verifyGoogleIdentity({ idToken: 'mock_google_token_email=admin@alumni.test&sub=attacker' })
+        ).rejects.toMatchObject({ status: 401 });
+        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('oauth2.googleapis.com/tokeninfo'));
+      } finally {
+        env.NODE_ENV = realEnv;
+        global.fetch = realFetch;
+      }
+    });
   });
 });
