@@ -200,6 +200,10 @@ async function googleAuth(req, res) {
 
   // 1. Google proves identity (OIDC)
   const identity = await oauthService.verifyGoogleIdentity({ idToken, code });
+  // Accounts are matched by email below, so an unverified Google email could take over someone's account.
+  if (!identity.emailVerified) {
+    throw ApiError.unauthorized('Your Google account email is not verified');
+  }
 
   // 2. Look up existing user by Google ID or Email
   let user = (await users.findByGoogleId(identity.googleId)) || (await users.findByEmail(identity.email));

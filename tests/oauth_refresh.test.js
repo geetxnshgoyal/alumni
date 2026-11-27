@@ -200,6 +200,16 @@ describe('Lecture 16: Modern Authentication Architectures (Access + Refresh Toke
       expect(rows[0].auth_provider).toBe('GOOGLE');
     });
 
+    it('rejects a Google account whose email is not verified, so it cannot take over an existing account (401)', async () => {
+      const idToken = `mock_google_token_email=${encodeURIComponent(testUser.email)}&sub=unverified_${Date.now()}&verified=false`;
+
+      const res = await api().post('/api/auth/oauth/google').send({ idToken });
+
+      expect(res.status).toBe(401);
+      const { rows } = await pool.query('SELECT google_id FROM users WHERE email = $1', [testUser.email]);
+      expect(rows[0].google_id).toBeNull();
+    });
+
     it('enforces role authorization: Google accounts do not get admin automatically (Slide 21)', async () => {
       const googleEmail = `regular.alum.${Date.now()}@gmail.com`;
       const idToken = `mock_google_token_email=${encodeURIComponent(googleEmail)}&name=Regular%20Alum&sub=g_${Date.now()}`;
