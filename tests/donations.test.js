@@ -324,6 +324,22 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(res2.body.alreadyProcessed).toBe(true);
     });
 
+    it('rejects an unsigned webhook and leaves the donation unpaid', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 3000 });
+      const { donation, gatewayOrder } = orderRes.body.data;
+
+      const res = await api()
+        .post('/api/donations/webhook')
+        .send({ event: 'payment.captured', payload: { orderId: gatewayOrder.orderId, paymentId: 'pay_forged' } });
+
+      expect(res.status).toBe(400);
+      const { rows } = await pool.query('SELECT donation_status FROM donation WHERE donation_id = $1', [donation.donationId]);
+      expect(rows[0].donation_status).toBe('INITIATED');
+    });
+
     it('rejects webhook with invalid signature with 400', async () => {
       const res = await api()
         .post('/api/donations/webhook')

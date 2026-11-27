@@ -180,11 +180,9 @@ async function handleWebhook(req, res, next) {
     const signature = req.get('x-razorpay-signature') || req.get('x-gateway-signature') || req.body?.signature;
     const rawPayload = req.body;
 
-    if (signature) {
-      const isValid = gateway.verifyWebhookSignature(rawPayload, signature);
-      if (!isValid) {
-        throw ApiError.badRequest('Invalid webhook signature verification failed');
-      }
+    // Unsigned webhooks are rejected: anyone can call this URL, only the gateway knows the secret.
+    if (!signature || !gateway.verifyWebhookSignature(rawPayload, signature)) {
+      throw ApiError.badRequest('Invalid or missing webhook signature');
     }
 
     const event = req.body.event || 'payment.captured';
