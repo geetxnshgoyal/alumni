@@ -51,7 +51,7 @@ async function verifyGoogleIdentity({ idToken, code }) {
       email,
       fullName,
       avatarUrl: `https://lh3.googleusercontent.com/a/mock-${googleId.slice(0, 8)}`,
-      emailVerified: true,
+      emailVerified: !rawSubject.includes('verified=false'), // lets tests simulate an unverified Google email
       provider: 'GOOGLE',
     };
   }
