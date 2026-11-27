@@ -134,6 +134,33 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(campRes.body.data.donorCount).toBe(1);
     });
 
+    it('issues exactly one receipt even when the payment is verified twice (#C3)', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 2500 });
+      const { donation, gatewayOrder } = orderRes.body.data;
+      const paymentId = gateway.generateTestPaymentId();
+      const body = {
+        donationId: donation.donationId,
+        gatewayOrderId: gatewayOrder.orderId,
+        gatewayPaymentId: paymentId,
+        signature: gateway.generateSignature({ orderId: gatewayOrder.orderId, paymentId }),
+      };
+
+      const first = await api().post('/api/donations/verify').set(auth(alum1.token)).send(body);
+      const second = await api().post('/api/donations/verify').set(auth(alum1.token)).send(body);
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.body.data.receiptNo).toBe(first.body.data.receiptNo);
+      const receipts = await pool.query('SELECT receipt_no FROM donation_receipt WHERE donation_id = $1', [donation.donationId]);
+      expect(receipts.rows).toHaveLength(1);
+
+      const campRes = await api().get(`/api/campaigns/${campaign.campaignId}`);
+      expect(campRes.body.data.amountRaised).toBe(2500); // not double-counted
+    });
+
     it('rejects tampered signature with 400 verification failure', async () => {
       const orderRes = await api()
         .post('/api/donations')
