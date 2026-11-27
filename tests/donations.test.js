@@ -161,6 +161,28 @@ describe('Donations & Payment Gateway API (#C2)', () => {
       expect(campRes.body.data.amountRaised).toBe(2500); // not double-counted
     });
 
+    it('test-mode checkout signs the payment for the donor so verify settles it', async () => {
+      const orderRes = await api()
+        .post('/api/donations')
+        .set(auth(alum1.token))
+        .send({ campaignId: campaign.campaignId, amount: 1500 });
+      const { donation } = orderRes.body.data;
+      const checkoutUrl = `/api/donations/${donation.donationId}/test-checkout`;
+
+      // Only the donor can check out their own donation
+      expect((await api().post(checkoutUrl).set(auth(alum2.token))).status).toBe(404);
+
+      const checkout = await api().post(checkoutUrl).set(auth(alum1.token));
+      expect(checkout.status).toBe(200);
+
+      const verify = await api().post('/api/donations/verify').set(auth(alum1.token)).send(checkout.body.data);
+      expect(verify.status).toBe(200);
+      expect(verify.body.data.donationStatus).toBe('SUCCESS');
+
+      // A settled donation cannot be checked out again
+      expect((await api().post(checkoutUrl).set(auth(alum1.token))).status).toBe(409);
+    });
+
     it('rejects tampered signature with 400 verification failure', async () => {
       const orderRes = await api()
         .post('/api/donations')

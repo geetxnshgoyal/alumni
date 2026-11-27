@@ -12,6 +12,9 @@ router.post('/', authenticate, validate({ body: schemas.createOrder }), controll
 // 2. Verify payment & settle donation (Authenticated donor)
 router.post('/verify', authenticate, validate({ body: schemas.verifyPayment }), controller.verifyPayment);
 
+// 2b. Test-mode gateway checkout: returns the payment signature a real checkout would (donor only)
+router.post('/:id/test-checkout', authenticate, validate({ params: schemas.idParam }), controller.testCheckout);
+
 // 3. Record payment failure (Authenticated donor)
 router.post('/fail', authenticate, validate({ body: schemas.recordFailure }), controller.recordFailure);
 

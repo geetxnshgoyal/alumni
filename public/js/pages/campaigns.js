@@ -311,23 +311,15 @@ export async function renderCampaigns(container) {
       const res = await api.post('/donations', { campaignId, amount, isAnonymous });
       const { donation, gatewayOrder } = res;
 
-      // 2. Simulate Payment Verification
-      const token = auth.getToken();
-      const mockPaymentId = `pay_test_${Date.now()}`;
-      
-      const verifyRes = await fetch('/api/donations/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          donationId: donation.donationId,
-          gatewayOrderId: gatewayOrder.orderId,
-          gatewayPaymentId: mockPaymentId,
-          // Calculate valid test signature
-          signature: 'test_signature_valid',
-        }),
+      // 2. Test-mode checkout returns the signed payment, like a real gateway's checkout popup
+      const payment = await api.post(`/donations/${donation.donationId}/test-checkout`, {});
+
+      // 3. Server verifies the HMAC signature and settles the donation; api.post throws on failure
+      await api.post('/donations/verify', {
+        donationId: donation.donationId,
+        gatewayOrderId: gatewayOrder.orderId,
+        gatewayPaymentId: payment.gatewayPaymentId,
+        signature: payment.signature,
       });
 
       closeModal();

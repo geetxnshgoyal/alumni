@@ -81,6 +81,33 @@ async function verifyPayment(req, res, next) {
   }
 }
 
+// Test-mode checkout: plays the gateway's hosted checkout page, which in a real integration
+// (e.g. Razorpay Checkout) returns paymentId + signature to the browser after the user pays.
+// shortcut: always on because the gateway is a test-mode simulator; remove when a live gateway is wired in.
+async function testCheckout(req, res, next) {
+  try {
+    const donation = await donations.findById(req.valid.params.id);
+    if (!donation || donation.donorId !== req.user.id) {
+      throw ApiError.notFound('Donation record not found');
+    }
+    if (donation.donationStatus !== 'INITIATED') {
+      throw ApiError.conflict(`Donation is already ${donation.donationStatus}`);
+    }
+
+    const gatewayPaymentId = gateway.generateTestPaymentId();
+    res.json({
+      data: {
+        donationId: donation.donationId,
+        gatewayOrderId: donation.gatewayOrderId,
+        gatewayPaymentId,
+        signature: gateway.generateSignature({ orderId: donation.gatewayOrderId, paymentId: gatewayPaymentId }),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function recordFailure(req, res, next) {
   try {
     const { donationId, gatewayOrderId, reason } = req.valid?.body || req.body;
@@ -318,6 +345,7 @@ module.exports = {
   createOrder,
   verifyPayment,
   recordFailure,
+  testCheckout,
   getById,
   getReceipt,
   listMyDonations,
