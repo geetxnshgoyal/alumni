@@ -54,6 +54,12 @@ describe('Success Stories Module (#C4)', () => {
       expect(res.status).toBe(403);
     });
 
+    it('rejects a non-numeric story id with 400 and a field error', async () => {
+      const res = await api().get('/api/stories/abc');
+      expect(res.status).toBe(400);
+      expect(res.body.error.details).toEqual(expect.arrayContaining([expect.objectContaining({ location: 'params', field: 'id' })]));
+    });
+
     it('rejects invalid inputs with 400', async () => {
       const res = await api()
         .post('/api/stories')
