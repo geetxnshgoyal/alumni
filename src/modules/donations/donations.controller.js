@@ -112,6 +112,11 @@ async function recordFailure(req, res, next) {
   try {
     const { donationId, gatewayOrderId, reason } = req.valid?.body || req.body;
 
+    const existing = await donations.findById(donationId);
+    if (!existing || (existing.donorId !== req.user.id && req.user.role !== 'ADMIN')) {
+      throw ApiError.notFound('Donation record not found');
+    }
+
     const failed = await donations.recordPaymentFailure({
       donationId,
       gatewayOrderId,

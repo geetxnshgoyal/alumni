@@ -229,6 +229,13 @@ describe('Donations & Payment Gateway API (#C2)', () => {
 
       const { donation, gatewayOrder } = orderRes.body.data;
 
+      // Another user cannot fail someone else's donation
+      const otherRes = await api()
+        .post('/api/donations/fail')
+        .set(auth(alum2.token))
+        .send({ donationId: donation.donationId, gatewayOrderId: gatewayOrder.orderId });
+      expect(otherRes.status).toBe(404);
+
       const failRes = await api()
         .post('/api/donations/fail')
         .set(auth(alum1.token))
