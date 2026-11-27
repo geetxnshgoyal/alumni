@@ -161,16 +161,24 @@ export async function renderCampaigns(container) {
             <div style="display: flex; justify-content: space-between; align-items: center; pt: 12px; border-top: 1px solid var(--border-subtle);">
               <span class="small muted" style="font-weight: 500;">
                 👥 ${c.donorCount || 0} supporters
+                ${c.donorCount ? `· <button type="button" class="btn-top-donors" data-id="${c.campaignId}" aria-expanded="false" style="background:none; border:0; padding:0; color:var(--primary); font:inherit; cursor:pointer;">🏆 Top donors</button>` : ''}
               </span>
               <button class="btn btn-sm btn-primary btn-donate" data-id="${c.campaignId}" data-title="${esc(c.title)}" data-desc="${esc(c.description)}">
                 Contribute Now
               </button>
             </div>
+            <div class="top-donors-list small" data-id="${c.campaignId}" hidden style="margin-top: 12px;"></div>
           </div>
         </div>
       `;
       })
       .join('');
+
+    grid.querySelectorAll('.btn-top-donors').forEach((btn) => {
+      btn.addEventListener('click', () =>
+        toggleTopDonors(btn, grid.querySelector(`.top-donors-list[data-id="${btn.dataset.id}"]`))
+      );
+    });
 
     grid.querySelectorAll('.btn-donate').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -181,6 +189,29 @@ export async function renderCampaigns(container) {
         openDonationModal(btn.dataset.id, btn.dataset.title, btn.dataset.desc);
       });
     });
+  }
+
+  async function toggleTopDonors(btn, box) {
+    const open = box.hidden;
+    box.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    if (!open || box.dataset.loaded) return;
+
+    box.innerHTML = '<span class="muted">Loading…</span>';
+    try {
+      const donors = await api.get(`/donations/campaign/${btn.dataset.id}/top-donors?limit=3`);
+      box.innerHTML = `<ol style="margin: 0; padding-left: 18px;">${(donors || [])
+        .map(
+          (d) => `<li>
+            <strong>#${d.rank} ${esc(d.donorName)}</strong>
+            <span class="muted">· ₹${Number(d.totalAmount).toLocaleString('en-IN')} (${d.sharePercent}%)</span>
+          </li>`
+        )
+        .join('')}</ol>`;
+      box.dataset.loaded = '1';
+    } catch (err) {
+      box.innerHTML = `<span style="color: var(--danger);">${esc(err.message)}</span>`;
+    }
   }
 
   async function loadMyDonations() {
