@@ -24,6 +24,9 @@ router.get('/my', authenticate, validate({ query: schemas.listQuery }), controll
 // 5. Public campaign donor list (with optional auth to show donor's own name if anonymous)
 router.get('/campaign/:id', optionalAuth, validate({ params: schemas.idParam, query: schemas.listQuery }), controller.listCampaignDonations);
 
+// Public top-donors leaderboard for a campaign (anonymous donors masked)
+router.get('/campaign/:id/top-donors', optionalAuth, validate({ params: schemas.idParam, query: schemas.topDonorsQuery }), controller.topDonors);
+
 // 6. Get single donation details (donor or admin)
 router.get('/:id', authenticate, validate({ params: schemas.idParam }), controller.getById);
 

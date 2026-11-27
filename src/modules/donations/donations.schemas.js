@@ -1,4 +1,4 @@
-const { z, id, idParam, pagination, text, optionalText } = require('../../utils/validators');
+const { z, id, idParam, pagination, text, optionalText, optionalInt } = require('../../utils/validators');
 
 const gatewayEnum = z.enum(['RAZORPAY', 'STRIPE']);
 const statusEnum = z.enum(['INITIATED', 'SUCCESS', 'FAILED']);
@@ -34,7 +34,12 @@ const listQuery = z.object({
   ...pagination,
 });
 
+const topDonorsQuery = z.object({
+  limit: optionalInt(1, 20).default(5),
+});
+
 module.exports = {
+  topDonorsQuery,
   createOrder,
   verifyPayment,
   recordFailure,

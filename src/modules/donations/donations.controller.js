@@ -1,5 +1,6 @@
 const gateway = require('./payment-gateway.service');
 const donations = require('./donations.model');
+const campaigns = require('./campaigns.model');
 const ApiError = require('../../utils/ApiError');
 const audit = require('../audit/audit.model');
 
@@ -155,6 +156,25 @@ async function listCampaignDonations(req, res, next) {
   }
 }
 
+async function topDonors(req, res, next) {
+  try {
+    const campaignId = req.valid.params.id;
+    const campaign = await campaigns.findById(campaignId);
+    if (!campaign) throw ApiError.notFound('Campaign not found');
+
+    const items = await donations.topDonorsByCampaign({
+      campaignId,
+      limit: req.valid.query.limit,
+      viewerUserId: req.user?.id || null,
+      isAdmin: req.user?.role === 'ADMIN',
+    });
+
+    res.json({ data: items });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function handleWebhook(req, res, next) {
   try {
     const signature = req.get('x-razorpay-signature') || req.get('x-gateway-signature') || req.body?.signature;
@@ -304,5 +324,6 @@ module.exports = {
   getReceipt,
   listMyDonations,
   listCampaignDonations,
+  topDonors,
   handleWebhook,
 };

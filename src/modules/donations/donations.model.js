@@ -334,6 +334,34 @@ async function listByCampaign({ campaignId, page = 1, limit = 20, viewerUserId =
 }
 
 /**
+ * Top donors of a campaign, ranked by their total SUCCESS donations.
+ * RANK() gives tied donors the same rank (1, 1, 3); SUM(SUM(..)) OVER () is the campaign total,
+ * used for each donor's share. A donor who gave anonymously even once stays masked for the public.
+ */
+async function topDonorsByCampaign({ campaignId, limit = 5, viewerUserId = null, isAdmin = false }) {
+  const { rows } = await query(
+    `SELECT RANK() OVER (ORDER BY SUM(d.amount) DESC)::int AS "rank",
+            CASE
+              WHEN BOOL_OR(d.is_anonymous) AND $2::int IS DISTINCT FROM d.donor_id AND $3::boolean = false
+              THEN 'Anonymous Donor'
+              ELSE u.full_name
+            END AS "donorName",
+            SUM(d.amount)::float AS "totalAmount",
+            COUNT(*)::int AS "donationCount",
+            ROUND(100 * SUM(d.amount) / SUM(SUM(d.amount)) OVER (), 1)::float AS "sharePercent"
+       FROM donation d
+       JOIN users u ON u.user_id = d.donor_id
+      WHERE d.campaign_id = $1
+        AND d.donation_status = 'SUCCESS'
+      GROUP BY d.donor_id, u.full_name
+      ORDER BY "rank", MIN(d.created_at)
+      LIMIT $4`,
+    [campaignId, viewerUserId, isAdmin, limit]
+  );
+  return rows;
+}
+
+/**
  * Idempotently handles asynchronous webhook events from payment gateway provider.
  */
 async function handleWebhookEvent({ event, payload }) {
@@ -391,5 +419,6 @@ module.exports = {
   recordPaymentFailure,
   listByDonor,
   listByCampaign,
+  topDonorsByCampaign,
   handleWebhookEvent,
 };
