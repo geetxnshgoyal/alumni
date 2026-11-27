@@ -101,6 +101,20 @@ describe('Campaigns API', () => {
       expect(camp.donorCount).toBe(1);
     });
 
+    it('counts only SUCCESS donations towards amount raised', async () => {
+      await pool.query(
+        `INSERT INTO donation (campaign_id, donor_id, amount, donation_status)
+         VALUES ($1, $2, 7000, 'INITIATED'), ($1, $2, 9000, 'FAILED')`,
+        [campaignId, alum.id]
+      );
+
+      const res = await api().get(`/api/campaigns/${campaignId}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.amountRaised).toBe(25000);
+      expect(res.body.data.donorCount).toBe(1);
+    });
+
     it('returns a single campaign by ID with amount raised', async () => {
       const res = await api().get(`/api/campaigns/${campaignId}`);
 
