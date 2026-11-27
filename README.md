@@ -8,11 +8,20 @@ success stories, and feedback/surveys.
 
 | | |
 |---|---|
-| Hosted URL | _add after deploying_ |
+| Hosted URL | https://alumni-ep6w.onrender.com |
 | ER diagram | [docs/er-diagram.svg](docs/er-diagram.svg) |
 | Approved scope checklist | [docs/scope-checklist.md](docs/scope-checklist.md) |
 | Team plan & Git workflow | [docs/team-plan.md](docs/team-plan.md) |
 | How to add a module | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| Checkpoint log | [docs/meetings.md](docs/meetings.md) |
+
+## Features and team
+
+| Area (checklist items) | What it does | Built by |
+|---|---|---|
+| Core & identity (L1–L9) | Alumni/student registration, login with lockout, roles, profiles with skills and interests, alumni directory search, admin verification and account status, departments, notifications, audit log, admin stats, CI, deployment | Geetansh Goyal (lead) |
+| Networking, jobs & events (B1–B6) | Connection and mentorship requests, messaging, job posts and applications, events with capacity and waitlist | Bhavesh Sharma |
+| Giving, stories & feedback (C1–C6) | Campaigns, test-mode donations with receipts, success stories with admin review, surveys with results, feedback with replies; refresh-token rotation and Google sign-in | Ravi Sharma |
 
 ---
 
@@ -53,8 +62,12 @@ These are demo accounts only. Change `SEED_ADMIN_PASSWORD` before seeding a host
 ### Checkpoint demo
 
 With `npm run dev` running in another terminal, `npm run demo` runs one live check per acceptance test of
-items L1–L9 in the [scope checklist](docs/scope-checklist.md) and prints PASS/FAIL for each. Pass a URL to check
-the hosted app: `npm run demo -- https://<your-service>.onrender.com`. Needs `curl` and `jq`.
+items L1–L9 and C1–C6 in the [scope checklist](docs/scope-checklist.md), plus refresh-token rotation and Google
+sign-in, and prints PASS/FAIL for each. Pass a URL to check the hosted app:
+`npm run demo -- https://<your-service>.onrender.com`. Needs `curl` and `jq`.
+
+Each run creates demo users and records (`demo.*@example.com`, "Demo Campaign …") in the database it targets,
+so prefer running it locally.
 
 ### If setup fails
 
@@ -115,7 +128,9 @@ src/
     validate.js          zod validation for body / query / params
     errorHandler.js      404 + central error -> JSON (maps PostgreSQL errors to 400/409)
     rateLimit.js         Login/register brute-force protection
-  modules/<feature>/     One folder per feature:
+  modules/<feature>/     One folder per feature: auth, users, profile, alumni, departments, notifications,
+                         audit, admin (lead) · connections, messages, jobs, events (B) ·
+                         donations, stories, surveys, feedback (C)
     *.routes.js          URL + HTTP method -> middleware -> controller
     *.controller.js      Request handling and business rules
     *.model.js           SQL queries (parameterised, never string-concatenated)
@@ -123,6 +138,8 @@ src/
   utils/                 ApiError, shared validators, pagination, SQL helpers
 public/                  Web frontend (hash router, one file per page in js/pages)
 tests/                   Jest + Supertest API tests
+scripts/demo-checkpoint.sh   Live PASS/FAIL check of the acceptance tests (npm run demo)
+.github/workflows/test.yml   CI: runs the tests on every pull request and push to main
 ```
 
 How a request flows, e.g. `GET /api/alumni?city=Pune`:
@@ -234,7 +251,12 @@ curl -s 'localhost:3000/api/alumni?city=Bengaluru' -H "Authorization: Bearer <to
 - All input validated with zod; all SQL parameterised; `LIKE` wildcards escaped
 - Only `http(s)` URLs accepted for links and photos (no `javascript:` links)
 - Helmet security headers and a Content-Security-Policy; frontend escapes all user text
-- Audit log of logins, failures, lockouts and admin actions
+- Short-lived access tokens with rotating refresh tokens (stored as SHA-256 hashes, `httpOnly` cookie);
+  reusing an old refresh token revokes the whole session family
+- Google sign-in checks the token audience and requires a Google-verified email; the test-only mock is disabled in production
+- Payments: gateway signatures verified with HMAC; webhooks are signature-checked and idempotent
+- Audit log of logins, failures, lockouts, admin actions, event/campaign changes and payment results
+  (including rejected payment signatures)
 
 ## Deployment (Render + PostgreSQL)
 
@@ -255,7 +277,7 @@ Notes: the free web service sleeps when idle (the first request takes about a mi
 are time-limited, so check Render's current free-tier terms before the final evaluation. A [Neon](https://neon.tech) database
 works too: set `DATABASE_URL` to its connection string and `DATABASE_SSL=true`.
 
-**Deployment verification record:** fill in after deploying:
+**Deployment verification record:**
 
 | Item | Evidence |
 |---|---|
